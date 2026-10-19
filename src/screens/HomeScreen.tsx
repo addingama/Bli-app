@@ -27,16 +27,41 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function HomeScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const [summary, setSummary] = React.useState({
+    pembelian: 0,
+    penjualan: 0,
+    transaksi_beli: 0,
+    transaksi_jual: 0,
+    keuntungan: 0,
+    total_stok: 0,
+    nilai_stok: 0,
+  });
+  const [loading, setLoading] = React.useState(true);
 
-  // Placeholder data
-  const summary = {
-    pembelian: 450000,
-    penjualan: 720000,
-    transaksi_beli: 12,
-    transaksi_jual: 8,
-    keuntungan: 270000,
-    total_stok: 18,
-    nilai_stok: 2800000,
+  // Load data on mount and when screen is focused
+  React.useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const { getTransaksiHariIni } = await import('../database/queries/transaksi');
+      const data = await getTransaksiHariIni();
+      setSummary({
+        pembelian: data.total_pembelian,
+        penjualan: data.total_penjualan,
+        transaksi_beli: data.jumlah_transaksi_beli,
+        transaksi_jual: data.jumlah_transaksi_jual,
+        keuntungan: data.keuntungan_kotor,
+        total_stok: data.total_stok_items,
+        nilai_stok: data.total_nilai_stok,
+      });
+    } catch (error) {
+      console.error('[HomeScreen] Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -18,6 +18,7 @@ import HistoryScreen from '../screens/HistoryScreen';
 import MenuScreen from '../screens/MenuScreen';
 import BuyTransactionScreen from '../screens/BuyTransactionScreen';
 import SellTransactionScreen from '../screens/SellTransactionScreen';
+import TransactionSuccessScreen from '../screens/TransactionSuccessScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -131,6 +132,15 @@ export default function AppNavigator() {
           options={{
             title: 'TRANSAKSI PENJUALAN',
             headerBackTitle: 'Kembali',
+          }}
+        />
+        <Stack.Screen
+          name="TransactionSuccess"
+          component={TransactionSuccessScreen}
+          options={{
+            title: 'TRANSAKSI BERHASIL',
+            headerBackTitle: 'Kembali',
+            headerLeft: () => null, // Prevent back button
           }}
         />
       </Stack.Navigator>

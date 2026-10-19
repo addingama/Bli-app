@@ -8,6 +8,7 @@ import {
   View,
   ScrollView,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import {
   TextInput,
@@ -16,12 +17,15 @@ import {
   Text,
   Card,
   useTheme,
+  IconButton,
 } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../types';
+import type { RootStackParamList, TransaksiItemInput } from '../types';
 import { formatCurrency } from '../utils/formatCurrency';
 import { spacing } from '../theme/theme';
+import AddItemModal from '../components/AddItemModal';
+import { createTransaksiJual } from '../database/queries/transaksi';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -31,10 +35,56 @@ export default function SellTransactionScreen() {
   
   const [pembeliName, setPembeliName] = React.useState('');
   const [phoneNumber, setPhoneNumber] = React.useState('');
-  const [items, setItems] = React.useState<any[]>([]);
+  const [items, setItems] = React.useState<TransaksiItemInput[]>([]);
   const [metodeBayar, setMetodeBayar] = React.useState<'cash' | 'transfer'>('cash');
+  const [catatan, setCatatan] = React.useState('');
+  const [showAddItem, setShowAddItem] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
 
-  const totalNilai = items.reduce((sum, item) => sum + (item.sub_total || 0), 0);
+  const totalNilai = items.reduce((sum, item) => sum + item.sub_total, 0);
+
+  const handleAddItem = (item: TransaksiItemInput) => {
+    setItems([...items, item]);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleSave = async () => {
+    if (items.length === 0) {
+      Alert.alert('Error', 'Minimal tambahkan 1 barang');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const result = await createTransaksiJual({
+        jenis: 'jual',
+        pembeli_nama: pembeliName || 'Pembeli',
+        nomor_hp: phoneNumber || undefined,
+        items,
+        total_nilai: totalNilai,
+        metode_bayar: metodeBayar,
+        catatan: catatan || undefined,
+      });
+
+      console.log('[SellTransaction] Transaction saved:', result);
+
+      // Navigate to success screen
+      navigation.replace('TransactionSuccess', {
+        transaksiId: result.transaksi_id,
+        nomorTransaksi: result.nomor_transaksi,
+        jenis: 'jual',
+      });
+    } catch (error) {
+      console.error('[SellTransaction] Error saving:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Gagal menyimpan transaksi');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -78,17 +128,24 @@ export default function SellTransactionScreen() {
           ) : (
             items.map((item, index) => (
               <Card key={index} style={styles.itemCard}>
-                <Card.Content>
-                  <Text style={styles.itemName}>{item.nama}</Text>
-                  <Text style={styles.itemStock}>
-                    Stok: {item.stok_tersedia} {item.satuan} tersedia ✓
-                  </Text>
-                  <Text style={styles.itemDetail}>
-                    {item.quantity} {item.satuan} × {formatCurrency(item.harga_satuan)}
-                  </Text>
-                  <Text style={[styles.itemSubtotal, { color: theme.colors.secondary }]}>
-                    = {formatCurrency(item.sub_total)}
-                  </Text>
+                <Card.Content style={styles.itemCardContent}>
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>
+                      {item.barang_nama}
+                      {item.grade && ` ${item.grade}`}
+                    </Text>
+                    <Text style={styles.itemDetail}>
+                      {item.quantity} {item.satuan} × {formatCurrency(item.harga_satuan)}
+                    </Text>
+                    <Text style={[styles.itemSubtotal, { color: theme.colors.secondary }]}>
+                      = {formatCurrency(item.sub_total)}
+                    </Text>
+                  </View>
+                  <IconButton
+                    icon="close"
+                    size={20}
+                    onPress={() => handleRemoveItem(index)}
+                  />
                 </Card.Content>
               </Card>
             ))
@@ -97,7 +154,7 @@ export default function SellTransactionScreen() {
           <Button
             mode="outlined"
             icon="plus"
-            onPress={() => {}}
+            onPress={() => setShowAddItem(true)}
             style={styles.addButton}
             contentStyle={styles.addButtonContent}
           >
@@ -127,6 +184,20 @@ export default function SellTransactionScreen() {
           </View>
         </View>
 
+        {/* Catatan */}
+        <View style={styles.section}>
+          <TextInput
+            mode="outlined"
+            label="Catatan (opsional)"
+            value={catatan}
+            onChangeText={setCatatan}
+            style={styles.input}
+            multiline
+            numberOfLines={3}
+            placeholder="Tambahkan catatan transaksi"
+          />
+        </View>
+
         <View style={styles.bottomPadding} />
       </ScrollView>
 
@@ -147,16 +218,25 @@ export default function SellTransactionScreen() {
           
           <Button
             mode="contained"
-            onPress={() => {}}
+            onPress={handleSave}
             style={styles.saveButton}
             contentStyle={styles.saveButtonContent}
             buttonColor={theme.colors.secondary}
-            disabled={items.length === 0}
+            disabled={items.length === 0 || saving}
+            loading={saving}
           >
-            SIMPAN TRANSAKSI JUAL
+            {saving ? 'MENYIMPAN...' : 'SIMPAN TRANSAKSI JUAL'}
           </Button>
         </View>
       </View>
+
+      {/* Add Item Modal */}
+      <AddItemModal
+        visible={showAddItem}
+        onDismiss={() => setShowAddItem(false)}
+        onAdd={handleAddItem}
+        jenis="jual"
+      />
     </View>
   );
 }
@@ -193,14 +273,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     backgroundColor: '#F5F5F5',
   },
+  itemCardContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  itemInfo: {
+    flex: 1,
+  },
   itemName: {
     fontSize: 16,
     fontWeight: '500',
-    marginBottom: spacing.xs,
-  },
-  itemStock: {
-    fontSize: 12,
-    color: '#4CAF50',
     marginBottom: spacing.xs,
   },
   itemDetail: {
