@@ -368,7 +368,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusChip: {
-    height: 28,
+    height: 32,
+    paddingVertical: 4,
   },
   itemDescription: {
     marginTop: spacing.xs,
@@ -381,7 +382,8 @@ const styles = StyleSheet.create({
   paymentChip: {
     marginTop: spacing.xs,
     alignSelf: 'flex-start',
-    height: 28,
+    height: 32,
+    paddingVertical: 4,
     backgroundColor: '#F5F5F5',
   },
   emptyList: {

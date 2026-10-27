@@ -298,11 +298,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   statChip: {
-    height: 28,
+    height: 32,
+    paddingVertical: 4,
     backgroundColor: '#E3F2FD',
   },
   jenisChip: {
-    height: 28,
+    height: 32,
+    paddingVertical: 4,
   },
   itemActions: {
     flexDirection: 'row',
