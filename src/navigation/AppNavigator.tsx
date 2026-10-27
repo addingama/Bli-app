@@ -32,7 +32,19 @@ function BottomTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: theme.colors.primary,
+          elevation: 4,
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          shadowOffset: { width: 0, height: 2 },
+        },
+        headerTintColor: '#FFFFFF',
+        headerTitleStyle: {
+          fontWeight: '600',
+          fontSize: 18,
+        },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
         tabBarStyle: {
@@ -53,6 +65,7 @@ function BottomTabNavigator() {
         name="Home"
         component={HomeScreen}
         options={{
+          title: 'BliApp - Beranda',
           tabBarLabel: 'Beranda',
           tabBarIcon: ({ color, size, focused }) => (
             <MaterialCommunityIcons
@@ -67,6 +80,7 @@ function BottomTabNavigator() {
         name="Stock"
         component={StockScreen}
         options={{
+          title: 'Stok Barang',
           tabBarLabel: 'Stok',
           tabBarIcon: ({ color, size, focused }) => (
             <MaterialCommunityIcons
@@ -81,6 +95,7 @@ function BottomTabNavigator() {
         name="History"
         component={HistoryScreen}
         options={{
+          title: 'Riwayat Transaksi',
           tabBarLabel: 'Riwayat',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="history" size={size} color={color} />
@@ -91,6 +106,7 @@ function BottomTabNavigator() {
         name="Menu"
         component={MenuScreen}
         options={{
+          title: 'Menu',
           tabBarLabel: 'Menu',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="menu" size={size} color={color} />
@@ -111,6 +127,14 @@ export default function AppNavigator() {
         screenOptions={{
           headerShown: true,
           animation: 'slide_from_right',
+          headerStyle: {
+            backgroundColor: '#4CAF50',
+          },
+          headerTintColor: '#FFFFFF',
+          headerTitleStyle: {
+            fontWeight: '600',
+            fontSize: 18,
+          },
         }}
       >
         <Stack.Screen
@@ -122,7 +146,7 @@ export default function AppNavigator() {
           name="BuyTransaction"
           component={BuyTransactionScreen}
           options={{
-            title: 'TRANSAKSI PEMBELIAN',
+            title: 'Transaksi Pembelian',
             headerBackTitle: 'Kembali',
           }}
         />
@@ -130,17 +154,20 @@ export default function AppNavigator() {
           name="SellTransaction"
           component={SellTransactionScreen}
           options={{
-            title: 'TRANSAKSI PENJUALAN',
+            title: 'Transaksi Penjualan',
             headerBackTitle: 'Kembali',
+            headerStyle: {
+              backgroundColor: '#2196F3',
+            },
           }}
         />
         <Stack.Screen
           name="TransactionSuccess"
           component={TransactionSuccessScreen}
           options={{
-            title: 'TRANSAKSI BERHASIL',
+            title: 'Transaksi Berhasil',
             headerBackTitle: 'Kembali',
-            headerLeft: () => null, // Prevent back button
+            headerLeft: () => null,
           }}
         />
       </Stack.Navigator>
