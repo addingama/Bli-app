@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "BliApp",
-    "slug": "bliapp",
+    "slug": "BliApp",
     "version": "1.0.0",
     "owner": "addingama",
     "orientation": "portrait",
@@ -51,7 +51,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "will-be-generated"
+        "projectId": "6da696b5-5155-4d22-b66b-4bdd74140554"
       }
     }
   }
