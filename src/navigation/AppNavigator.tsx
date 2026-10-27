@@ -21,6 +21,10 @@ import SellTransactionScreen from '../screens/SellTransactionScreen';
 import TransactionSuccessScreen from '../screens/TransactionSuccessScreen';
 import BarangListScreen from '../screens/BarangListScreen';
 import BarangFormScreen from '../screens/BarangFormScreen';
+import SupplierListScreen from '../screens/SupplierListScreen';
+import SupplierFormScreen from '../screens/SupplierFormScreen';
+import PembeliListScreen from '../screens/PembeliListScreen';
+import PembeliFormScreen from '../screens/PembeliFormScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -185,6 +189,38 @@ export default function AppNavigator() {
           component={BarangFormScreen}
           options={({ route }) => ({
             title: route.params.mode === 'edit' ? 'Edit Barang' : 'Tambah Barang',
+            headerBackTitle: 'Kembali',
+          })}
+        />
+        <Stack.Screen
+          name="SupplierList"
+          component={SupplierListScreen}
+          options={{
+            title: 'Kelola Supplier',
+            headerBackTitle: 'Kembali',
+          }}
+        />
+        <Stack.Screen
+          name="SupplierForm"
+          component={SupplierFormScreen}
+          options={({ route }) => ({
+            title: route.params.mode === 'edit' ? 'Edit Supplier' : 'Tambah Supplier',
+            headerBackTitle: 'Kembali',
+          })}
+        />
+        <Stack.Screen
+          name="PembeliList"
+          component={PembeliListScreen}
+          options={{
+            title: 'Kelola Pembeli',
+            headerBackTitle: 'Kembali',
+          }}
+        />
+        <Stack.Screen
+          name="PembeliForm"
+          component={PembeliFormScreen}
+          options={({ route }) => ({
+            title: route.params.mode === 'edit' ? 'Edit Pembeli' : 'Tambah Pembeli',
             headerBackTitle: 'Kembali',
           })}
         />

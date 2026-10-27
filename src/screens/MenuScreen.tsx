@@ -65,18 +65,14 @@ export default function MenuScreen() {
           description="Kelola data supplier dan pemasok"
           left={(props) => <List.Icon {...props} icon="account-group" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            // TODO: Navigate to SupplierList when implemented
-          }}
+          onPress={() => navigation.navigate('SupplierList')}
         />
         <List.Item
           title="Kelola Pembeli"
           description="Kelola data pembeli dan pelanggan"
           left={(props) => <List.Icon {...props} icon="domain" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {
-            // TODO: Navigate to PembeliList when implemented
-          }}
+          onPress={() => navigation.navigate('PembeliList')}
         />
       </View>
 
