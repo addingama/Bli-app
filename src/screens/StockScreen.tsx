@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   lowStockChip: {
-    height: 24,
+    height: 28,
     backgroundColor: '#FFEBEE',
   },
   emptyList: {

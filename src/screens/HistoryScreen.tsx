@@ -209,7 +209,7 @@ export default function HistoryScreen() {
               color={isBuy ? theme.colors.error : theme.colors.secondary}
             />
             <Badge
-              size={18}
+              size={20}
               style={[
                 styles.badge,
                 {
@@ -346,11 +346,16 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     position: 'relative',
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   badge: {
     position: 'absolute',
-    top: 0,
-    right: 0,
+    top: -4,
+    right: -4,
+    minWidth: 20,
   },
   itemTitleRow: {
     flexDirection: 'row',
@@ -363,7 +368,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusChip: {
-    height: 24,
+    height: 28,
   },
   itemDescription: {
     marginTop: spacing.xs,
@@ -376,7 +381,7 @@ const styles = StyleSheet.create({
   paymentChip: {
     marginTop: spacing.xs,
     alignSelf: 'flex-start',
-    height: 24,
+    height: 28,
     backgroundColor: '#F5F5F5',
   },
   emptyList: {

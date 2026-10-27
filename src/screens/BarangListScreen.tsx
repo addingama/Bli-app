@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   gradeChip: {
-    height: 24,
+    height: 28,
   },
   itemActions: {
     flexDirection: 'row',

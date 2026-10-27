@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   statChip: {
-    height: 24,
+    height: 28,
     backgroundColor: '#FCE4EC',
   },
   itemActions: {
