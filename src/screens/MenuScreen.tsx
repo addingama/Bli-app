@@ -14,10 +14,16 @@ import {
   Title,
   useTheme,
 } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../types';
 import { spacing } from '../theme/theme';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function MenuScreen() {
   const theme = useTheme();
+  const navigation = useNavigation<NavigationProp>();
 
   return (
     <ScrollView style={styles.container}>
@@ -49,21 +55,28 @@ export default function MenuScreen() {
         <Title style={styles.sectionTitle}>🗄️ MASTER DATA</Title>
         <List.Item
           title="Kelola Barang"
+          description="Tambah, edit, dan kelola data barang"
           left={(props) => <List.Icon {...props} icon="package-variant" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('BarangList')}
         />
         <List.Item
           title="Kelola Supplier"
+          description="Kelola data supplier dan pemasok"
           left={(props) => <List.Icon {...props} icon="account-group" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => {
+            // TODO: Navigate to SupplierList when implemented
+          }}
         />
         <List.Item
           title="Kelola Pembeli"
+          description="Kelola data pembeli dan pelanggan"
           left={(props) => <List.Icon {...props} icon="domain" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => {
+            // TODO: Navigate to PembeliList when implemented
+          }}
         />
       </View>
 

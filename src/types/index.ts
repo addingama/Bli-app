@@ -29,6 +29,25 @@ export type RootStackParamList = {
     jenis: 'beli' | 'jual';
     onItemAdded: (item: TransaksiItemInput) => void;
   };
+  // Master Data Barang
+  BarangList: undefined;
+  BarangForm: {
+    mode: 'create' | 'edit';
+    barangId?: number;
+  };
+  // Master Data Supplier
+  SupplierList: undefined;
+  SupplierForm: {
+    mode: 'create' | 'edit';
+    supplierId?: number;
+  };
+  // Master Data Pembeli
+  PembeliList: undefined;
+  PembeliForm: {
+    mode: 'create' | 'edit';
+    pembeliId?: number;
+  };
+  // Legacy (keep for backwards compatibility)
   MasterBarang: undefined;
   FormBarang: {
     barangId?: number;

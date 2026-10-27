@@ -11,7 +11,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
 import type { RootStackParamList, BottomTabParamList } from '../types';
 
-// Import screens (will be created next)
+// Import screens
 import HomeScreen from '../screens/HomeScreen';
 import StockScreen from '../screens/StockScreen';
 import HistoryScreen from '../screens/HistoryScreen';
@@ -19,6 +19,8 @@ import MenuScreen from '../screens/MenuScreen';
 import BuyTransactionScreen from '../screens/BuyTransactionScreen';
 import SellTransactionScreen from '../screens/SellTransactionScreen';
 import TransactionSuccessScreen from '../screens/TransactionSuccessScreen';
+import BarangListScreen from '../screens/BarangListScreen';
+import BarangFormScreen from '../screens/BarangFormScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -169,6 +171,22 @@ export default function AppNavigator() {
             headerBackTitle: 'Kembali',
             headerLeft: () => null,
           }}
+        />
+        <Stack.Screen
+          name="BarangList"
+          component={BarangListScreen}
+          options={{
+            title: 'Kelola Barang',
+            headerBackTitle: 'Kembali',
+          }}
+        />
+        <Stack.Screen
+          name="BarangForm"
+          component={BarangFormScreen}
+          options={({ route }) => ({
+            title: route.params.mode === 'edit' ? 'Edit Barang' : 'Tambah Barang',
+            headerBackTitle: 'Kembali',
+          })}
         />
       </Stack.Navigator>
     </NavigationContainer>

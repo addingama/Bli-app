@@ -75,7 +75,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
-        <StatusBar style="light" backgroundColor="#4CAF50" />
+        <StatusBar style="light" />
         <AppNavigator />
       </PaperProvider>
     </SafeAreaProvider>
