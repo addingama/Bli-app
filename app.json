@@ -1,8 +1,9 @@
 {
   "expo": {
     "name": "BliApp",
-    "slug": "BliApp",
+    "slug": "bliapp",
     "version": "1.0.0",
+    "owner": "addingama",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,14 +17,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bliapp.pengepul"
+      "bundleIdentifier": "com.bliapp.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#4CAF50",
         "foregroundImage": "./assets/adaptive-icon.png"
       },
-      "package": "com.bliapp.pengepul",
+      "package": "com.bliapp.mobile",
       "permissions": [
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_EXTERNAL_STORAGE"
@@ -47,6 +48,11 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "will-be-generated"
+      }
     }
   }
 }
