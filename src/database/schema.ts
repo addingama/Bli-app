@@ -1,3 +1,10 @@
+/**
+ * Database Schema for BliApp
+ * Version: 1.0.0
+ * Description: Database schema untuk aplikasi pengepul BliApp
+ */
+
+export const DATABASE_SCHEMA = `
 -- BliApp Database Schema
 -- Version: 1.0.0
 -- Description: Database schema untuk aplikasi pengepul BliApp
@@ -201,3 +208,4 @@ SELECT
 FROM transaksi
 WHERE status = 'lunas'
 GROUP BY DATE(tanggal);
+`;
