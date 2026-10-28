@@ -17,6 +17,10 @@ import AppNavigator from './src/navigation/AppNavigator';
 
 // Database
 import { initDatabase, checkDatabaseHealth } from './src/database/init';
+import {
+  applyPreviewUpdateIfAvailable,
+  startPreviewUpdateListener,
+} from './src/updates/applyPreviewUpdate';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -26,10 +30,17 @@ export default function App() {
     initializeApp();
   }, []);
 
+  useEffect(() => {
+    return startPreviewUpdateListener();
+  }, []);
+
   async function initializeApp() {
     try {
       console.log('[App] Starting initialization...');
-      
+
+      // Preview channel: download + reload before UI so testers need no force-close cycle.
+      await applyPreviewUpdateIfAvailable();
+
       // Initialize database
       await initDatabase();
       console.log('[App] Database initialized');
