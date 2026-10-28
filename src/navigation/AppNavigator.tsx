@@ -142,6 +142,7 @@ export default function AppNavigator() {
       <Stack.Navigator
         screenOptions={{
           headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
           animation: 'slide_from_right',
           headerStyle: {
             backgroundColor: '#4CAF50',
@@ -163,7 +164,6 @@ export default function AppNavigator() {
           component={BuyTransactionScreen}
           options={{
             title: 'Transaksi Pembelian',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -171,7 +171,6 @@ export default function AppNavigator() {
           component={SellTransactionScreen}
           options={{
             title: 'Transaksi Penjualan',
-            headerBackTitle: 'Kembali',
             headerStyle: {
               backgroundColor: '#2196F3',
             },
@@ -182,7 +181,6 @@ export default function AppNavigator() {
           component={TransactionSuccessScreen}
           options={{
             title: 'Transaksi Berhasil',
-            headerBackTitle: 'Kembali',
             headerLeft: () => null,
           }}
         />
@@ -191,7 +189,6 @@ export default function AppNavigator() {
           component={TransactionDetailScreen}
           options={{
             title: 'Detail Transaksi',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -199,7 +196,6 @@ export default function AppNavigator() {
           component={LaporanKeuanganScreen}
           options={{
             title: 'Laporan Keuangan',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -207,7 +203,6 @@ export default function AppNavigator() {
           component={LaporanStokScreen}
           options={{
             title: 'Laporan Stok',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -215,7 +210,6 @@ export default function AppNavigator() {
           component={LaporanBarangScreen}
           options={{
             title: 'Laporan per Barang',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -223,7 +217,6 @@ export default function AppNavigator() {
           component={BackupExportScreen}
           options={{
             title: 'Backup & Export',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -231,7 +224,6 @@ export default function AppNavigator() {
           component={TentangAplikasiScreen}
           options={{
             title: 'Tentang Aplikasi',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -239,7 +231,6 @@ export default function AppNavigator() {
           component={BarangListScreen}
           options={{
             title: 'Kelola Barang',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -247,7 +238,6 @@ export default function AppNavigator() {
           component={BarangFormScreen}
           options={({ route }) => ({
             title: route.params.mode === 'edit' ? 'Edit Barang' : 'Tambah Barang',
-            headerBackTitle: 'Kembali',
           })}
         />
         <Stack.Screen
@@ -255,7 +245,6 @@ export default function AppNavigator() {
           component={SupplierListScreen}
           options={{
             title: 'Kelola Supplier',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -263,7 +252,6 @@ export default function AppNavigator() {
           component={SupplierFormScreen}
           options={({ route }) => ({
             title: route.params.mode === 'edit' ? 'Edit Supplier' : 'Tambah Supplier',
-            headerBackTitle: 'Kembali',
           })}
         />
         <Stack.Screen
@@ -271,7 +259,6 @@ export default function AppNavigator() {
           component={PembeliListScreen}
           options={{
             title: 'Kelola Pembeli',
-            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen
@@ -279,7 +266,6 @@ export default function AppNavigator() {
           component={PembeliFormScreen}
           options={({ route }) => ({
             title: route.params.mode === 'edit' ? 'Edit Pembeli' : 'Tambah Pembeli',
-            headerBackTitle: 'Kembali',
           })}
         />
       </Stack.Navigator>

@@ -15,6 +15,7 @@ import {
 import {
   TextInput,
   Button,
+  IconButton,
   Text,
   Switch,
   Chip,
@@ -211,14 +212,13 @@ export default function BarangFormScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <Button
-          onPress={handleBack}
-          textColor="#FFFFFF"
+        <IconButton
           icon="arrow-left"
-          compact
-        >
-          Kembali
-        </Button>
+          iconColor="#FFFFFF"
+          size={24}
+          onPress={handleBack}
+          accessibilityLabel="Kembali"
+        />
       ),
     });
   }, [hasChanges]);
