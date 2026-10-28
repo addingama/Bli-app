@@ -29,6 +29,7 @@ import { spacing } from '../theme/theme';
 import EmptyState from '../components/EmptyState';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { KeyboardScreen } from '../components/KeyboardForm';
 import { formatCurrency } from '../utils/formatCurrency';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -302,7 +303,7 @@ export default function BarangListScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardScreen style={styles.container}>
       <FlatList
         data={filteredList}
         renderItem={renderItem}
@@ -325,11 +326,12 @@ export default function BarangListScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         contentContainerStyle={filteredList.length === 0 ? styles.emptyList : undefined}
+        keyboardShouldPersistTaps="handled"
       />
       
       <FAB
         icon="plus"
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        style={[styles.fab, { backgroundColor: theme.colors.inversePrimary }]}
         onPress={handleAddBarang}
         label="Tambah Barang"
       />
@@ -345,7 +347,7 @@ export default function BarangListScreen() {
       />
       
       <LoadingOverlay visible={deleting} message="Menghapus barang..." />
-    </View>
+    </KeyboardScreen>
   );
 }
 

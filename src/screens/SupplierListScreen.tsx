@@ -27,6 +27,7 @@ import { spacing } from '../theme/theme';
 import EmptyState from '../components/EmptyState';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { KeyboardScreen } from '../components/KeyboardForm';
 import { formatCurrency } from '../utils/formatCurrency';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -224,7 +225,7 @@ export default function SupplierListScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardScreen style={styles.container}>
       <FlatList
         data={filteredList}
         renderItem={renderItem}
@@ -247,6 +248,7 @@ export default function SupplierListScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         contentContainerStyle={filteredList.length === 0 ? styles.emptyList : undefined}
+        keyboardShouldPersistTaps="handled"
       />
       
       <FAB
@@ -267,7 +269,7 @@ export default function SupplierListScreen() {
       />
       
       <LoadingOverlay visible={deleting} message="Menghapus supplier..." />
-    </View>
+    </KeyboardScreen>
   );
 }
 

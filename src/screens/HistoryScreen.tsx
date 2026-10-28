@@ -28,6 +28,7 @@ import { formatCurrency } from '../utils/formatCurrency';
 import { spacing } from '../theme/theme';
 import EmptyState from '../components/EmptyState';
 import LoadingOverlay from '../components/LoadingOverlay';
+import { KeyboardScreen } from '../components/KeyboardForm';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -284,7 +285,7 @@ export default function HistoryScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardScreen style={styles.container}>
       <FlatList
         data={filteredList}
         renderItem={renderItem}
@@ -305,8 +306,9 @@ export default function HistoryScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         contentContainerStyle={filteredList.length === 0 ? styles.emptyList : undefined}
+        keyboardShouldPersistTaps="handled"
       />
-    </View>
+    </KeyboardScreen>
   );
 }
 

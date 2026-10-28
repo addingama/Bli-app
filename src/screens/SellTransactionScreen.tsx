@@ -6,7 +6,6 @@
 import React from 'react';
 import {
   View,
-  ScrollView,
   StyleSheet,
   Alert,
 } from 'react-native';
@@ -27,6 +26,7 @@ import { formatQuantity } from '../utils/formatQuantity';
 import { spacing } from '../theme/theme';
 import AddItemModal from '../components/AddItemModal';
 import PartnerPicker from '../components/PartnerPicker';
+import KeyboardForm from '../components/KeyboardForm';
 import { createTransaksiJual } from '../database/queries/transaksi';
 import { usePartnerField } from '../hooks/usePartnerField';
 
@@ -95,8 +95,38 @@ export default function SellTransactionScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
+    <KeyboardForm
+      style={styles.container}
+      footer={
+        <View style={[styles.footer, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.footerContent}>
+            <View style={styles.totalContainer}>
+              <Text style={[styles.totalLabel, { color: theme.colors.onSurface }]}>
+                TOTAL:
+              </Text>
+              <Text style={[styles.totalValue, { color: theme.colors.onSurface }]}>
+                {formatCurrency(totalNilai)}
+              </Text>
+              <Text style={[styles.totalItems, { color: theme.colors.onSurfaceVariant }]}>
+                {items.length} item
+              </Text>
+            </View>
+
+            <Button
+              mode="contained"
+              onPress={handleSave}
+              style={styles.saveButton}
+              contentStyle={styles.saveButtonContent}
+              buttonColor={theme.colors.secondary}
+              disabled={items.length === 0 || saving}
+              loading={saving}
+            >
+              {saving ? 'MENYIMPAN...' : 'SIMPAN TRANSAKSI JUAL'}
+            </Button>
+          </View>
+        </View>
+      }
+    >
         {/* Pembeli Info */}
         <View style={styles.section}>
           <Title style={styles.sectionTitle}>🏢 INFORMASI PEMBELI</Title>
@@ -203,46 +233,13 @@ export default function SellTransactionScreen() {
           />
         </View>
 
-        <View style={styles.bottomPadding} />
-      </ScrollView>
-
-      {/* Sticky Footer */}
-      <View style={[styles.footer, { backgroundColor: theme.colors.surface }]}>
-        <View style={styles.footerContent}>
-          <View style={styles.totalContainer}>
-            <Text style={[styles.totalLabel, { color: theme.colors.onSurface }]}>
-              TOTAL:
-            </Text>
-            <Text style={[styles.totalValue, { color: theme.colors.onSurface }]}>
-              {formatCurrency(totalNilai)}
-            </Text>
-            <Text style={[styles.totalItems, { color: theme.colors.onSurfaceVariant }]}>
-              {items.length} item
-            </Text>
-          </View>
-          
-          <Button
-            mode="contained"
-            onPress={handleSave}
-            style={styles.saveButton}
-            contentStyle={styles.saveButtonContent}
-            buttonColor={theme.colors.secondary}
-            disabled={items.length === 0 || saving}
-            loading={saving}
-          >
-            {saving ? 'MENYIMPAN...' : 'SIMPAN TRANSAKSI JUAL'}
-          </Button>
-        </View>
-      </View>
-
-      {/* Add Item Modal */}
       <AddItemModal
         visible={showAddItem}
         onDismiss={() => setShowAddItem(false)}
         onAdd={handleAddItem}
         jenis="jual"
       />
-    </View>
+    </KeyboardForm>
   );
 }
 
@@ -250,9 +247,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  scrollView: {
-    flex: 1,
   },
   section: {
     padding: spacing.md,
@@ -313,14 +307,7 @@ const styles = StyleSheet.create({
   paymentButton: {
     flex: 1,
   },
-  bottomPadding: {
-    height: 120,
-  },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
     elevation: 8,

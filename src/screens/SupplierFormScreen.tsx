@@ -4,14 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import {
   TextInput,
   Button,
@@ -26,6 +19,7 @@ import type { RootStackParamList, SupplierInput } from '../types';
 import { spacing } from '../theme/theme';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ConfirmDialog from '../components/ConfirmDialog';
+import KeyboardForm from '../components/KeyboardForm';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'SupplierForm'>;
@@ -200,11 +194,30 @@ export default function SupplierFormScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <KeyboardForm
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      footer={
+        <View style={[styles.actions, { backgroundColor: theme.colors.surface }]}>
+          <Button
+            mode="outlined"
+            onPress={handleBack}
+            style={styles.actionButton}
+            disabled={saving}
+          >
+            Batal
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleSave}
+            style={styles.actionButton}
+            loading={saving}
+            disabled={saving}
+          >
+            {isEditMode ? 'Update' : 'Simpan'}
+          </Button>
+        </View>
+      }
     >
-      <ScrollView style={styles.scrollView}>
         <View style={styles.form}>
           {/* Nama Supplier */}
           <TextInput
@@ -273,28 +286,6 @@ export default function SupplierFormScreen() {
         </View>
 
         <View style={styles.bottomPadding} />
-      </ScrollView>
-
-      {/* Action Buttons */}
-      <View style={[styles.actions, { backgroundColor: theme.colors.surface }]}>
-        <Button
-          mode="outlined"
-          onPress={handleBack}
-          style={styles.actionButton}
-          disabled={saving}
-        >
-          Batal
-        </Button>
-        <Button
-          mode="contained"
-          onPress={handleSave}
-          style={styles.actionButton}
-          loading={saving}
-          disabled={saving}
-        >
-          {isEditMode ? 'Update' : 'Simpan'}
-        </Button>
-      </View>
 
       <ConfirmDialog
         visible={discardDialog}
@@ -307,7 +298,7 @@ export default function SupplierFormScreen() {
       />
 
       <LoadingOverlay visible={saving} message="Menyimpan..." />
-    </KeyboardAvoidingView>
+    </KeyboardForm>
   );
 }
 
@@ -315,9 +306,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  scrollView: {
-    flex: 1,
   },
   form: {
     padding: spacing.md,

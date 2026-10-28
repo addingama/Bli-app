@@ -33,9 +33,12 @@ import { formatQuantity, parseQuantity, sanitizeQuantityInput } from '../utils/f
 import { spacing } from '../theme/theme';
 import EmptyState from '../components/EmptyState';
 import LoadingOverlay from '../components/LoadingOverlay';
+import { KeyboardScreen } from '../components/KeyboardForm';
+import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
 
 export default function StockScreen() {
   const theme = useTheme();
+  const keyboardHeight = useKeyboardHeight();
   
   // State
   const [stockList, setStockList] = useState<RingkasanStok[]>([]);
@@ -336,7 +339,7 @@ export default function StockScreen() {
 
   return (
     <Portal.Host>
-    <View style={styles.container}>
+    <KeyboardScreen style={styles.container}>
       {loading && <LoadingOverlay visible message="Memuat data stok..." />}
       <FlatList
         data={filteredList}
@@ -358,13 +361,17 @@ export default function StockScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         contentContainerStyle={filteredList.length === 0 ? styles.emptyList : undefined}
+        keyboardShouldPersistTaps="handled"
       />
 
       <Portal>
         <Dialog
           visible={adjustTarget !== null}
           onDismiss={closeAdjust}
-          style={{ backgroundColor: theme.colors.surface }}
+          style={{
+            backgroundColor: theme.colors.surface,
+            marginBottom: keyboardHeight,
+          }}
         >
           <Dialog.Title>Sesuaikan Stok</Dialog.Title>
           <Dialog.Content>
@@ -401,7 +408,7 @@ export default function StockScreen() {
           </Dialog.Actions>
         </Dialog>
       </Portal>
-    </View>
+    </KeyboardScreen>
     </Portal.Host>
   );
 }

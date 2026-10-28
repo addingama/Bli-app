@@ -8,7 +8,10 @@ import {
   View,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
+import { useKeyboardHeight } from '../hooks/useKeyboardHeight';
+import { useKeyboardAwareScroll } from './KeyboardForm';
 import {
   Modal,
   Portal,
@@ -79,6 +82,13 @@ export function AddItemModalView({
   onAdd,
 }: AddItemModalViewProps) {
   const theme = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
+  const keyboardHeight = useKeyboardHeight();
+  const scroll = useKeyboardAwareScroll();
+  const scrollMaxHeight = Math.max(
+    140,
+    Math.min(windowHeight * 0.55, windowHeight - keyboardHeight - 220),
+  );
 
   const subTotal = React.useMemo(() => {
     const qty = parseQuantity(quantity);
@@ -98,7 +108,11 @@ export function AddItemModalView({
       <Modal
         visible={visible}
         onDismiss={onDismiss}
-        contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        style={keyboardHeight > 0 ? { marginBottom: keyboardHeight } : undefined}
+        contentContainerStyle={[
+          styles.modal,
+          { backgroundColor: theme.colors.surface },
+        ]}
       >
         <View style={styles.header}>
           <Text style={styles.title}>TAMBAH BARANG</Text>
@@ -107,10 +121,20 @@ export function AddItemModalView({
 
         <Divider />
 
+        <View
+          ref={scroll.frameRef}
+          style={{ maxHeight: scrollMaxHeight }}
+          onLayout={scroll.onFrameLayout}
+        >
         <ScrollView
-          style={styles.scroll}
+          ref={scroll.scrollRef}
+          style={[styles.scroll, { maxHeight: scrollMaxHeight }]}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          onScroll={scroll.onScroll}
+          onScrollBeginDrag={scroll.onScrollBeginDrag}
+          onScrollEndDrag={scroll.onScrollEndDrag}
+          scrollEventThrottle={16}
         >
           {step === 'search' ? (
             <>
@@ -228,6 +252,7 @@ export function AddItemModalView({
             </>
           )}
         </ScrollView>
+        </View>
 
         {step === 'form' && (
           <>
@@ -236,7 +261,6 @@ export function AddItemModalView({
               <Button
                 mode="contained"
                 onPress={onAdd}
-                style={styles.addButton}
                 contentStyle={styles.addButtonContent}
                 disabled={addDisabled}
               >
@@ -407,9 +431,9 @@ export default function AddItemModal({ visible, onDismiss, onAdd, jenis }: AddIt
 const styles = StyleSheet.create({
   modal: {
     margin: 20,
-    maxHeight: '90%',
     borderRadius: 16,
     overflow: 'hidden',
+    justifyContent: 'flex-start',
   },
   header: {
     flexDirection: 'row',
@@ -424,6 +448,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 0,
+    flexShrink: 1,
   },
   content: {
     padding: spacing.md,
@@ -494,9 +519,6 @@ const styles = StyleSheet.create({
   },
   actions: {
     padding: spacing.md,
-  },
-  addButton: {
-    marginBottom: spacing.sm,
   },
   addButtonContent: {
     height: 48,
