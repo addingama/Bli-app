@@ -107,9 +107,10 @@ export default function MenuScreen() {
         <Title style={styles.sectionTitle}>⚙️ PENGATURAN</Title>
         <List.Item
           title="Tentang Aplikasi"
+          description="Versi, fungsi, dan tempat data disimpan"
           left={(props) => <List.Icon {...props} icon="information" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('TentangAplikasi')}
         />
       </View>
 

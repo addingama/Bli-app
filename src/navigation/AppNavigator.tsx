@@ -25,6 +25,7 @@ import LaporanKeuanganScreen from '../screens/LaporanKeuanganScreen';
 import LaporanStokScreen from '../screens/LaporanStokScreen';
 import LaporanBarangScreen from '../screens/LaporanBarangScreen';
 import BackupExportScreen from '../screens/BackupExportScreen';
+import TentangAplikasiScreen from '../screens/TentangAplikasiScreen';
 import BarangListScreen from '../screens/BarangListScreen';
 import BarangFormScreen from '../screens/BarangFormScreen';
 import SupplierListScreen from '../screens/SupplierListScreen';
@@ -222,6 +223,14 @@ export default function AppNavigator() {
           component={BackupExportScreen}
           options={{
             title: 'Backup & Export',
+            headerBackTitle: 'Kembali',
+          }}
+        />
+        <Stack.Screen
+          name="TentangAplikasi"
+          component={TentangAplikasiScreen}
+          options={{
+            title: 'Tentang Aplikasi',
             headerBackTitle: 'Kembali',
           }}
         />

@@ -282,11 +282,9 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     gap: spacing.xs,
-    marginTop: spacing.xs,
+    marginTop: spacing.lg,
   },
   statChip: {
-    height: 32,
-    paddingVertical: 4,
     backgroundColor: '#FCE4EC',
   },
   itemActions: {

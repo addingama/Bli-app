@@ -169,7 +169,7 @@ export default function HistoryScreen() {
                 styles.statusChip,
                 { backgroundColor: `${getStatusColor(item.status)}20` }
               ]}
-              textStyle={{ color: getStatusColor(item.status) }}
+              textStyle={{ color: getStatusColor(item.status), }}
             >
               {getStatusLabel(item.status)}
             </Chip>
@@ -366,8 +366,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusChip: {
-    height: 32,
-    paddingVertical: 4,
+    
   },
   itemDescription: {
     marginTop: spacing.xs,
@@ -380,8 +379,6 @@ const styles = StyleSheet.create({
   paymentChip: {
     marginTop: spacing.xs,
     alignSelf: 'flex-start',
-    height: 32,
-    paddingVertical: 4,
     backgroundColor: '#F5F5F5',
   },
   emptyList: {
