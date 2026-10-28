@@ -139,8 +139,12 @@ function BottomTabNavigator() {
 
 /**
  * Root Stack Navigator
+ * Stack screens (no tab bar) need bottom inset so Android edge-to-edge
+ * navigation does not cover footers, FABs, or list content.
  */
 export default function AppNavigator() {
+  const insets = useSafeAreaInsets();
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -156,12 +160,20 @@ export default function AppNavigator() {
             fontWeight: '600',
             fontSize: 18,
           },
+          contentStyle: {
+            backgroundColor: '#FFFFFF',
+            paddingBottom: insets.bottom,
+          },
         }}
       >
         <Stack.Screen
           name="Main"
           component={BottomTabNavigator}
-          options={{ headerShown: false }}
+          options={{
+            headerShown: false,
+            // Tab bar already accounts for the system navigation inset.
+            contentStyle: { backgroundColor: '#FFFFFF', paddingBottom: 0 },
+          }}
         />
         <Stack.Screen
           name="BuyTransaction"
