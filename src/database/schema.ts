@@ -42,6 +42,15 @@ CREATE TABLE IF NOT EXISTS supplier (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Master kategori pengeluaran operasional
+CREATE TABLE IF NOT EXISTS kategori_pengeluaran (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nama TEXT NOT NULL COLLATE NOCASE UNIQUE,
+  status TEXT NOT NULL DEFAULT 'aktif',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Master Pembeli/Pabrik
 CREATE TABLE IF NOT EXISTS pembeli (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,6 +105,20 @@ CREATE TABLE IF NOT EXISTS transaksi_item (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (transaksi_id) REFERENCES transaksi(id) ON DELETE CASCADE,
   FOREIGN KEY (barang_id) REFERENCES barang(id)
+);
+
+-- Pengeluaran operasional (tidak mengubah stok)
+CREATE TABLE IF NOT EXISTS pengeluaran (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tanggal DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  kategori_id INTEGER,
+  kategori_nama TEXT NOT NULL,
+  nominal REAL NOT NULL,
+  metode_bayar TEXT NOT NULL DEFAULT 'cash',
+  catatan TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (kategori_id) REFERENCES kategori_pengeluaran(id)
 );
 
 -- ==========================================
@@ -172,6 +195,10 @@ CREATE INDEX IF NOT EXISTS idx_transaksi_item_barang ON transaksi_item(barang_id
 -- Stok indexes
 CREATE INDEX IF NOT EXISTS idx_stok_barang ON stok(barang_id);
 
+-- Pengeluaran indexes
+CREATE INDEX IF NOT EXISTS idx_pengeluaran_tanggal ON pengeluaran(tanggal);
+CREATE INDEX IF NOT EXISTS idx_pengeluaran_kategori ON pengeluaran(kategori_id);
+
 -- Mutasi stok indexes
 CREATE INDEX IF NOT EXISTS idx_mutasi_barang ON stok_mutasi(barang_id);
 CREATE INDEX IF NOT EXISTS idx_mutasi_tanggal ON stok_mutasi(tanggal);
@@ -201,15 +228,57 @@ WHERE b.status = 'aktif' AND b.katalog = 'jual';
 
 -- View: Laporan Keuangan Harian
 CREATE VIEW IF NOT EXISTS v_laporan_harian AS
-SELECT 
-  DATE(tanggal) as tanggal,
-  SUM(CASE WHEN jenis = 'beli' THEN total_nilai ELSE 0 END) as total_pembelian,
-  SUM(CASE WHEN jenis = 'jual' THEN total_nilai ELSE 0 END) as total_penjualan,
-  SUM(CASE WHEN jenis = 'jual' THEN total_nilai ELSE 0 END) - 
-  SUM(CASE WHEN jenis = 'beli' THEN total_nilai ELSE 0 END) as keuntungan_kotor
-FROM transaksi
-WHERE status = 'lunas'
-GROUP BY DATE(tanggal);
+SELECT
+  hari as tanggal,
+  SUM(total_pembelian) as total_pembelian,
+  SUM(total_penjualan) as total_penjualan,
+  SUM(total_pengeluaran) as total_pengeluaran,
+  SUM(total_penjualan) - SUM(total_pembelian) as keuntungan_kotor
+FROM (
+  SELECT
+    DATE(tanggal) as hari,
+    CASE WHEN jenis = 'beli' THEN total_nilai ELSE 0 END as total_pembelian,
+    CASE WHEN jenis = 'jual' THEN total_nilai ELSE 0 END as total_penjualan,
+    0 as total_pengeluaran
+  FROM transaksi
+  WHERE status = 'lunas'
+  UNION ALL
+  SELECT
+    DATE(tanggal) as hari,
+    0 as total_pembelian,
+    0 as total_penjualan,
+    nominal as total_pengeluaran
+  FROM pengeluaran
+) AS harian
+GROUP BY hari;
+`;
+
+/** Replaced on every launch so expense days appear in the daily report. */
+export const LAPORAN_HARIAN_VIEW_SQL = `
+CREATE VIEW v_laporan_harian AS
+SELECT
+  hari as tanggal,
+  SUM(total_pembelian) as total_pembelian,
+  SUM(total_penjualan) as total_penjualan,
+  SUM(total_pengeluaran) as total_pengeluaran,
+  SUM(total_penjualan) - SUM(total_pembelian) as keuntungan_kotor
+FROM (
+  SELECT
+    DATE(tanggal) as hari,
+    CASE WHEN jenis = 'beli' THEN total_nilai ELSE 0 END as total_pembelian,
+    CASE WHEN jenis = 'jual' THEN total_nilai ELSE 0 END as total_penjualan,
+    0 as total_pengeluaran
+  FROM transaksi
+  WHERE status = 'lunas'
+  UNION ALL
+  SELECT
+    DATE(tanggal) as hari,
+    0 as total_pembelian,
+    0 as total_penjualan,
+    nominal as total_pengeluaran
+  FROM pengeluaran
+) AS harian
+GROUP BY hari
 `;
 
 /** Replaced on every launch so existing installs pick up katalog filtering. */

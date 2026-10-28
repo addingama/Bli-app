@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { spacing } from '../theme/theme';
+import { colors } from '../theme/colors';
 import { formatCurrency } from '../utils/formatCurrency';
 import LoadingOverlay from '../components/LoadingOverlay';
 import EmptyState from '../components/EmptyState';
@@ -32,9 +33,12 @@ export default function LaporanKeuanganScreen() {
   const [summary, setSummary] = useState({
     pembelian: 0,
     penjualan: 0,
+    pengeluaran: 0,
     keuntungan: 0,
+    sisa: 0,
     transaksiBeli: 0,
     transaksiJual: 0,
+    jumlahPengeluaran: 0,
   });
   const [perHari, setPerHari] = useState<LaporanKeuanganHarian[]>([]);
 
@@ -47,9 +51,12 @@ export default function LaporanKeuanganScreen() {
       setSummary({
         pembelian: data.total_pembelian,
         penjualan: data.total_penjualan,
+        pengeluaran: data.total_pengeluaran,
         keuntungan: data.keuntungan_kotor,
+        sisa: data.sisa,
         transaksiBeli: data.jumlah_transaksi_beli,
         transaksiJual: data.jumlah_transaksi_jual,
+        jumlahPengeluaran: data.jumlah_pengeluaran,
       });
       setPerHari(data.per_hari);
     } catch (error) {
@@ -83,6 +90,8 @@ export default function LaporanKeuanganScreen() {
             <SummaryLine label="Pembelian" value={formatCurrency(summary.pembelian)} detail={`${summary.transaksiBeli} transaksi`} color={theme.colors.primary} />
             <SummaryLine label="Penjualan" value={formatCurrency(summary.penjualan)} detail={`${summary.transaksiJual} transaksi`} color={theme.colors.secondary} />
             <SummaryLine label="Selisih" value={formatCurrency(summary.keuntungan)} detail="Penjualan dikurangi pembelian" color={theme.colors.onSurface} />
+            <SummaryLine label="Pengeluaran" value={formatCurrency(summary.pengeluaran)} detail={`${summary.jumlahPengeluaran} catatan`} color={colors.warning} />
+            <SummaryLine label="Sisa" value={formatCurrency(summary.sisa)} detail="Selisih dikurangi pengeluaran" color={theme.colors.onSurface} />
           </Card.Content>
         </Card>
 
@@ -90,17 +99,17 @@ export default function LaporanKeuanganScreen() {
         {perHari.length === 0 ? (
           <EmptyState
             icon="cash-multiple"
-            title="Belum ada transaksi"
-            message="Tidak ada pembelian atau penjualan pada periode ini."
+            title="Belum ada catatan"
+            message="Tidak ada pembelian, penjualan, atau pengeluaran pada periode ini."
           />
         ) : (
           perHari.map(day => (
             <List.Item
               key={day.tanggal}
               title={format(parseISO(day.tanggal), 'd MMM yyyy', { locale: id })}
-              description={`Beli ${formatCurrency(day.total_pembelian)} • Jual ${formatCurrency(day.total_penjualan)}`}
+              description={`Beli ${formatCurrency(day.total_pembelian)} • Jual ${formatCurrency(day.total_penjualan)} • Keluar ${formatCurrency(day.total_pengeluaran)}`}
               right={() => (
-                <Text style={styles.dayTotal}>{formatCurrency(day.keuntungan_kotor)}</Text>
+                <Text style={styles.dayTotal}>{formatCurrency(day.sisa)}</Text>
               )}
               style={styles.listItem}
             />

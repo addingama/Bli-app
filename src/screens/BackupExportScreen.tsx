@@ -132,7 +132,7 @@ export default function BackupExportScreen() {
           <Card.Content>
             <Text style={styles.title}>Export ke Excel</Text>
             <Text style={[styles.body, { color: theme.colors.onSurfaceVariant }]}>
-              Satu file berisi barang, supplier, pembeli, transaksi, item, stok, dan mutasi stok. Simpan ke Files, Drive, atau WhatsApp.
+              Satu file berisi barang, supplier, pembeli, kategori pengeluaran, transaksi, pengeluaran, item, stok, dan mutasi stok. Simpan ke Files, Drive, atau WhatsApp.
             </Text>
             <Button mode="contained" icon="file-excel" onPress={exportExcel} disabled={loading}>
               Bagikan Excel
@@ -177,7 +177,7 @@ export default function BackupExportScreen() {
       <ConfirmDialog
         visible={pendingRestore !== null}
         title="Ganti data aplikasi?"
-        message="Restore mengganti transaksi, stok, dan master data yang ada dengan isi file backup."
+        message="Restore mengganti transaksi, pengeluaran, stok, dan master data yang ada dengan isi file backup."
         confirmText="Restore"
         cancelText="Batal"
         onConfirm={confirmRestore}

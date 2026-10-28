@@ -45,6 +45,26 @@ export interface Pembeli {
   updated_at: string;
 }
 
+export interface KategoriPengeluaran {
+  id: number;
+  nama: string;
+  status: 'aktif' | 'nonaktif';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Pengeluaran {
+  id: number;
+  tanggal: string;
+  kategori_id: number | null;
+  kategori_nama: string;
+  nominal: number;
+  metode_bayar: 'cash' | 'transfer';
+  catatan?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // ==========================================
 // TRANSAKSI TYPES
 // ==========================================
@@ -150,6 +170,7 @@ export interface LaporanHarian {
   tanggal: string;
   total_pembelian: number;
   total_penjualan: number;
+  total_pengeluaran: number;
   keuntungan_kotor: number;
 }
 
@@ -178,6 +199,19 @@ export interface PembeliInput {
   nama: string;
   nomor_hp?: string;
   alamat?: string;
+}
+
+export interface KategoriPengeluaranInput {
+  nama: string;
+  status?: 'aktif' | 'nonaktif';
+}
+
+export interface PengeluaranInput {
+  tanggal: string;
+  kategori_id: number;
+  nominal: number;
+  metode_bayar: 'cash' | 'transfer';
+  catatan?: string;
 }
 
 export interface TransaksiItemInput {

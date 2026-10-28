@@ -4,7 +4,7 @@
  */
 
 import * as SQLite from 'expo-sqlite';
-import { DATABASE_SCHEMA, RINGKASAN_STOK_VIEW_SQL } from './schema';
+import { DATABASE_SCHEMA, LAPORAN_HARIAN_VIEW_SQL, RINGKASAN_STOK_VIEW_SQL } from './schema';
 
 const DATABASE_NAME = 'bliapp.db';
 
@@ -79,6 +79,8 @@ async function migrateDatabase(db: SQLite.SQLiteDatabase): Promise<void> {
 
   await db.execAsync('DROP VIEW IF EXISTS v_ringkasan_stok');
   await db.execAsync(RINGKASAN_STOK_VIEW_SQL);
+  await db.execAsync('DROP VIEW IF EXISTS v_laporan_harian');
+  await db.execAsync(LAPORAN_HARIAN_VIEW_SQL);
 }
 
 /**
@@ -119,6 +121,20 @@ async function seedInitialData(db: SQLite.SQLiteDatabase): Promise<void> {
       
       console.log('[DB] Initial data seeded successfully');
     }
+
+    const kategoriCount = await db.getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM kategori_pengeluaran'
+    );
+    if (kategoriCount && kategoriCount.count === 0) {
+      await db.runAsync(`
+        INSERT INTO kategori_pengeluaran (nama) VALUES
+        ('Karung'),
+        ('Tali'),
+        ('Gaji'),
+        ('Transport'),
+        ('Lainnya')
+      `);
+    }
   } catch (error) {
     console.error('[DB] Error seeding data:', error);
     // Non-critical, don't throw
@@ -134,6 +150,8 @@ export async function dropDatabase(): Promise<void> {
     
     await db.execAsync(`
       DROP TABLE IF EXISTS transaksi_foto;
+      DROP TABLE IF EXISTS pengeluaran;
+      DROP TABLE IF EXISTS kategori_pengeluaran;
       DROP TABLE IF EXISTS stok_mutasi;
       DROP TABLE IF EXISTS stok;
       DROP TABLE IF EXISTS transaksi_item;

@@ -14,6 +14,16 @@ export type RootStackParamList = {
   Main: undefined;
   BuyTransaction: undefined;
   SellTransaction: undefined;
+  PengeluaranList: undefined;
+  PengeluaranForm: {
+    mode: 'create' | 'edit';
+    pengeluaranId?: number;
+  };
+  KategoriPengeluaranList: undefined;
+  KategoriPengeluaranForm: {
+    mode: 'create' | 'edit';
+    kategoriId?: number;
+  };
   TransactionSuccess: {
     transaksiId: number;
     nomorTransaksi: string;

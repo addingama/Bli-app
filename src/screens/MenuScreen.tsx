@@ -74,6 +74,13 @@ export default function MenuScreen() {
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => navigation.navigate('PembeliList')}
         />
+        <List.Item
+          title="Kategori Pengeluaran"
+          description="Karung, tali, gaji, dan biaya lain"
+          left={(props) => <List.Icon {...props} icon="tag-outline" />}
+          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          onPress={() => navigation.navigate('KategoriPengeluaranList')}
+        />
       </View>
 
       {/* Backup & Export Section */}

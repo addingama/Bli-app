@@ -58,15 +58,20 @@ export interface LaporanKeuanganHarian {
   tanggal: string;
   total_pembelian: number;
   total_penjualan: number;
+  total_pengeluaran: number;
   keuntungan_kotor: number;
+  sisa: number;
 }
 
 export async function getLaporanKeuangan(start: string, end: string): Promise<{
   total_pembelian: number;
   total_penjualan: number;
+  total_pengeluaran: number;
   keuntungan_kotor: number;
+  sisa: number;
   jumlah_transaksi_beli: number;
   jumlah_transaksi_jual: number;
+  jumlah_pengeluaran: number;
   per_hari: LaporanKeuanganHarian[];
 }> {
   const db = await openDatabase();
@@ -81,21 +86,37 @@ export async function getLaporanKeuangan(start: string, end: string): Promise<{
      ORDER BY tanggal DESC`,
     [start, end]
   );
+  const expenses = await db.getAllAsync<{ tanggal: string; nominal: number }>(
+    `SELECT tanggal, nominal
+     FROM pengeluaran
+     WHERE tanggal >= ? AND tanggal < ?`,
+    [start, end]
+  );
 
   const byDay = new Map<string, LaporanKeuanganHarian>();
   let totalPembelian = 0;
   let totalPenjualan = 0;
+  let totalPengeluaran = 0;
   let jumlahBeli = 0;
   let jumlahJual = 0;
 
-  for (const row of rows || []) {
-    const day = format(new Date(row.tanggal), 'yyyy-MM-dd');
-    const current = byDay.get(day) || {
+  const dayRow = (day: string): LaporanKeuanganHarian => {
+    const current = byDay.get(day);
+    if (current) return current;
+    const created: LaporanKeuanganHarian = {
       tanggal: day,
       total_pembelian: 0,
       total_penjualan: 0,
+      total_pengeluaran: 0,
       keuntungan_kotor: 0,
+      sisa: 0,
     };
+    byDay.set(day, created);
+    return created;
+  };
+
+  for (const row of rows || []) {
+    const current = dayRow(format(new Date(row.tanggal), 'yyyy-MM-dd'));
     if (row.jenis === 'beli') {
       current.total_pembelian += row.total_nilai;
       totalPembelian += row.total_nilai;
@@ -105,17 +126,30 @@ export async function getLaporanKeuangan(start: string, end: string): Promise<{
       totalPenjualan += row.total_nilai;
       jumlahJual += 1;
     }
-    current.keuntungan_kotor = current.total_penjualan - current.total_pembelian;
-    byDay.set(day, current);
   }
 
+  for (const row of expenses || []) {
+    const current = dayRow(format(new Date(row.tanggal), 'yyyy-MM-dd'));
+    current.total_pengeluaran += row.nominal;
+    totalPengeluaran += row.nominal;
+  }
+
+  for (const current of byDay.values()) {
+    current.keuntungan_kotor = current.total_penjualan - current.total_pembelian;
+    current.sisa = current.keuntungan_kotor - current.total_pengeluaran;
+  }
+
+  const keuntunganKotor = totalPenjualan - totalPembelian;
   return {
     total_pembelian: totalPembelian,
     total_penjualan: totalPenjualan,
-    keuntungan_kotor: totalPenjualan - totalPembelian,
+    total_pengeluaran: totalPengeluaran,
+    keuntungan_kotor: keuntunganKotor,
+    sisa: keuntunganKotor - totalPengeluaran,
     jumlah_transaksi_beli: jumlahBeli,
     jumlah_transaksi_jual: jumlahJual,
-    per_hari: Array.from(byDay.values()),
+    jumlah_pengeluaran: expenses?.length || 0,
+    per_hari: Array.from(byDay.values()).sort((a, b) => b.tanggal.localeCompare(a.tanggal)),
   };
 }
 
@@ -175,6 +209,7 @@ export async function getLaporanHarian(date: string): Promise<LaporanHarian> {
       tanggal: date,
       total_pembelian: 0,
       total_penjualan: 0,
+      total_pengeluaran: 0,
       keuntungan_kotor: 0,
     };
   } catch (error) {

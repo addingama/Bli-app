@@ -20,9 +20,11 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { format } from 'date-fns';
-import type { RootStackParamList, Transaksi } from '../types';
+import type { Pengeluaran, RootStackParamList, Transaksi } from '../types';
 import { formatCurrency } from '../utils/formatCurrency';
 import { spacing } from '../theme/theme';
+import { colors } from '../theme/colors';
+import { boundsForPeriode } from '../database/queries/reports';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -45,11 +47,17 @@ export default function HomeScreen() {
     nilai_stok: 0,
   });
   const [recent, setRecent] = useState<Transaksi[]>([]);
+  const [expenses, setExpenses] = useState<Pengeluaran[]>([]);
 
   const loadData = useCallback(async () => {
     try {
       const { getTransaksiHariIni } = await import('../database/queries/transaksi');
-      const data = await getTransaksiHariIni();
+      const { getPengeluaranBetween } = await import('../database/queries/pengeluaran');
+      const bounds = boundsForPeriode('hari');
+      const [data, todayExpenses] = await Promise.all([
+        getTransaksiHariIni(),
+        getPengeluaranBetween(bounds.start, bounds.end),
+      ]);
       setSummary({
         pembelian: data.total_pembelian,
         penjualan: data.total_penjualan,
@@ -60,6 +68,7 @@ export default function HomeScreen() {
         nilai_stok: data.total_nilai_stok,
       });
       setRecent(data.transaksi);
+      setExpenses(todayExpenses);
     } catch (error) {
       console.error('[HomeScreen] Error loading data:', error);
     }
@@ -176,41 +185,62 @@ export default function HomeScreen() {
         >
           TRANSAKSI JUAL
         </Button>
+
+        <Button
+          mode="contained"
+          icon="cash-minus"
+          onPress={() => navigation.navigate('PengeluaranList')}
+          style={styles.actionButton}
+          contentStyle={styles.actionButtonContent}
+          buttonColor={colors.warning}
+        >
+          PENGELUARAN
+        </Button>
       </View>
 
       {/* Recent Activity */}
       <View style={styles.activityContainer}>
         <Title style={styles.sectionTitle}>📋 AKTIVITAS TERAKHIR</Title>
         
-        {recent.length === 0 ? (
+        {recent.length === 0 && expenses.length === 0 ? (
           <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
-            Belum ada transaksi hari ini
+            Belum ada transaksi atau pengeluaran hari ini
           </Text>
         ) : (
-          recent.map(item => {
-            const isBeli = item.jenis === 'beli';
-            const partner = isBeli ? item.supplier_nama : item.pembeli_nama;
-            return (
-              <List.Item
-                key={item.id}
-                title={partner || (isBeli ? 'Pembelian' : 'Penjualan')}
-                description={`${isBeli ? 'Beli' : 'Jual'} • ${format(new Date(item.tanggal), 'HH:mm')} • ${item.total_items} item`}
-                left={props => (
-                  <List.Icon
-                    {...props}
-                    icon={isBeli ? 'cart-arrow-down' : 'cart-arrow-up'}
-                    color={isBeli ? theme.colors.primary : theme.colors.secondary}
-                  />
-                )}
-                right={() => (
-                  <Text style={[styles.activityAmount, { color: isBeli ? theme.colors.primary : theme.colors.secondary }]}>
-                    {formatCurrency(item.total_nilai)}
-                  </Text>
-                )}
-                onPress={() => navigation.navigate('TransactionDetail', { transaksiId: item.id })}
-              />
-            );
-          })
+          [...recent.map(item => ({
+            key: `trx-${item.id}`,
+            time: new Date(item.tanggal).getTime(),
+            title: (item.jenis === 'beli' ? item.supplier_nama : item.pembeli_nama) || (item.jenis === 'beli' ? 'Pembelian' : 'Penjualan'),
+            description: `${item.jenis === 'beli' ? 'Beli' : 'Jual'} • ${format(new Date(item.tanggal), 'HH:mm')} • ${item.total_items} item`,
+            icon: item.jenis === 'beli' ? 'cart-arrow-down' : 'cart-arrow-up',
+            color: item.jenis === 'beli' ? theme.colors.primary : theme.colors.secondary,
+            amount: item.total_nilai,
+            onPress: () => navigation.navigate('TransactionDetail', { transaksiId: item.id }),
+          })), ...expenses.map(item => ({
+            key: `out-${item.id}`,
+            time: new Date(item.tanggal).getTime(),
+            title: item.kategori_nama,
+            description: `Pengeluaran • ${format(new Date(item.tanggal), 'HH:mm')} • ${item.metode_bayar === 'cash' ? 'Cash' : 'Transfer'}`,
+            icon: 'cash-minus',
+            color: colors.warning,
+            amount: item.nominal,
+            onPress: () => navigation.navigate('PengeluaranForm', { mode: 'edit', pengeluaranId: item.id }),
+          }))].sort((a, b) => b.time - a.time).map(item => (
+            <List.Item
+              key={item.key}
+              title={item.title}
+              description={item.description}
+              left={props => (
+                <List.Icon {...props} icon={item.icon} color={item.color} />
+              )}
+              right={() => (
+                <Text style={[styles.activityAmount, { color: item.color }]}>
+                  {formatCurrency(item.amount)}
+                </Text>
+              )}
+              onPress={item.onPress}
+            />
+          ))
         )}
       </View>
 

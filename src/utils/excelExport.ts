@@ -51,7 +51,7 @@ function addSheet(workbook: XLSX.WorkBook, name: string, rows: Row[], headers: s
 }
 
 export async function createExcelFile(): Promise<string> {
-  const [barang, supplier, pembeli, transaksi, items, stok, mutasi] = await Promise.all([
+  const [barang, supplier, pembeli, kategori, transaksi, pengeluaran, items, stok, mutasi] = await Promise.all([
     query(
       `SELECT nama, kategori, katalog, satuan_default, status,
               harga_beli_terakhir, harga_jual_terakhir, stok_alert_minimum
@@ -66,9 +66,16 @@ export async function createExcelFile(): Promise<string> {
        FROM pembeli ORDER BY nama ASC`
     ),
     query(
+      `SELECT nama, status FROM kategori_pengeluaran ORDER BY nama ASC`
+    ),
+    query(
       `SELECT nomor_transaksi, jenis, tanggal, supplier_nama, pembeli_nama, nomor_hp,
               total_items, total_nilai, metode_bayar, status, catatan
        FROM transaksi ORDER BY tanggal DESC`
+    ),
+    query(
+      `SELECT tanggal, kategori_nama, nominal, metode_bayar, catatan
+       FROM pengeluaran ORDER BY tanggal DESC`
     ),
     query(
       `SELECT t.nomor_transaksi, t.jenis, t.tanggal, ti.barang_nama, ti.barang_kategori,
@@ -134,6 +141,29 @@ export async function createExcelFile(): Promise<string> {
       'Total penjualan': num(row.total_penjualan),
     })),
     ['Nama', 'Nomor HP', 'Alamat', 'Total transaksi', 'Total penjualan']
+  );
+
+  addSheet(
+    workbook,
+    'Kategori Pengeluaran',
+    kategori.map(row => ({
+      Nama: text(row.nama),
+      Status: text(row.status),
+    })),
+    ['Nama', 'Status']
+  );
+
+  addSheet(
+    workbook,
+    'Pengeluaran',
+    pengeluaran.map(row => ({
+      Tanggal: formatLocal(row.tanggal),
+      Kategori: text(row.kategori_nama),
+      Nominal: num(row.nominal),
+      'Cara bayar': text(row.metode_bayar),
+      Catatan: text(row.catatan),
+    })),
+    ['Tanggal', 'Kategori', 'Nominal', 'Cara bayar', 'Catatan']
   );
 
   addSheet(

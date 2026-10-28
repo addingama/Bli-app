@@ -32,6 +32,10 @@ import SupplierListScreen from '../screens/SupplierListScreen';
 import SupplierFormScreen from '../screens/SupplierFormScreen';
 import PembeliListScreen from '../screens/PembeliListScreen';
 import PembeliFormScreen from '../screens/PembeliFormScreen';
+import PengeluaranListScreen from '../screens/PengeluaranListScreen';
+import PengeluaranFormScreen from '../screens/PengeluaranFormScreen';
+import KategoriPengeluaranListScreen from '../screens/KategoriPengeluaranListScreen';
+import KategoriPengeluaranFormScreen from '../screens/KategoriPengeluaranFormScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -266,6 +270,34 @@ export default function AppNavigator() {
           component={PembeliFormScreen}
           options={({ route }) => ({
             title: route.params.mode === 'edit' ? 'Edit Pembeli' : 'Tambah Pembeli',
+          })}
+        />
+        <Stack.Screen
+          name="PengeluaranList"
+          component={PengeluaranListScreen}
+          options={{
+            title: 'Pengeluaran',
+          }}
+        />
+        <Stack.Screen
+          name="PengeluaranForm"
+          component={PengeluaranFormScreen}
+          options={({ route }) => ({
+            title: route.params.mode === 'edit' ? 'Edit Pengeluaran' : 'Tambah Pengeluaran',
+          })}
+        />
+        <Stack.Screen
+          name="KategoriPengeluaranList"
+          component={KategoriPengeluaranListScreen}
+          options={{
+            title: 'Kategori Pengeluaran',
+          }}
+        />
+        <Stack.Screen
+          name="KategoriPengeluaranForm"
+          component={KategoriPengeluaranFormScreen}
+          options={({ route }) => ({
+            title: route.params.mode === 'edit' ? 'Edit Kategori' : 'Tambah Kategori',
           })}
         />
       </Stack.Navigator>
