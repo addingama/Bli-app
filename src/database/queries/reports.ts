@@ -3,8 +3,148 @@
  * Reporting and analytics queries
  */
 
+import { endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { openDatabase } from '../init';
 import type { LaporanHarian } from '../types';
+
+export type PeriodeLaporan = 'hari' | 'minggu' | 'bulan';
+
+function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** Inclusive local dates, stored as ISO timestamps used by transaksi.tanggal. */
+export function boundsForPeriode(periode: PeriodeLaporan, now = new Date()): {
+  start: string;
+  end: string;
+  label: string;
+} {
+  const from = periode === 'minggu'
+    ? startOfWeek(now, { weekStartsOn: 1 })
+    : periode === 'bulan'
+      ? startOfMonth(now)
+      : now;
+  const to = periode === 'minggu'
+    ? endOfWeek(now, { weekStartsOn: 1 })
+    : periode === 'bulan'
+      ? endOfMonth(now)
+      : now;
+  const start = startOfLocalDay(from);
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate() + 1);
+  const sameDay = start.toDateString() === startOfLocalDay(to).toDateString();
+  const label = sameDay
+    ? format(start, 'd MMM yyyy', { locale: id })
+    : `${format(start, 'd MMM', { locale: id })} – ${format(to, 'd MMM yyyy', { locale: id })}`;
+
+  return { start: start.toISOString(), end: end.toISOString(), label };
+}
+
+export interface LaporanKeuanganHarian {
+  tanggal: string;
+  total_pembelian: number;
+  total_penjualan: number;
+  keuntungan_kotor: number;
+}
+
+export async function getLaporanKeuangan(start: string, end: string): Promise<{
+  total_pembelian: number;
+  total_penjualan: number;
+  keuntungan_kotor: number;
+  jumlah_transaksi_beli: number;
+  jumlah_transaksi_jual: number;
+  per_hari: LaporanKeuanganHarian[];
+}> {
+  const db = await openDatabase();
+  const rows = await db.getAllAsync<{
+    tanggal: string;
+    jenis: 'beli' | 'jual';
+    total_nilai: number;
+  }>(
+    `SELECT tanggal, jenis, total_nilai
+     FROM transaksi
+     WHERE status = 'lunas' AND tanggal >= ? AND tanggal < ?
+     ORDER BY tanggal DESC`,
+    [start, end]
+  );
+
+  const byDay = new Map<string, LaporanKeuanganHarian>();
+  let totalPembelian = 0;
+  let totalPenjualan = 0;
+  let jumlahBeli = 0;
+  let jumlahJual = 0;
+
+  for (const row of rows || []) {
+    const day = format(new Date(row.tanggal), 'yyyy-MM-dd');
+    const current = byDay.get(day) || {
+      tanggal: day,
+      total_pembelian: 0,
+      total_penjualan: 0,
+      keuntungan_kotor: 0,
+    };
+    if (row.jenis === 'beli') {
+      current.total_pembelian += row.total_nilai;
+      totalPembelian += row.total_nilai;
+      jumlahBeli += 1;
+    } else {
+      current.total_penjualan += row.total_nilai;
+      totalPenjualan += row.total_nilai;
+      jumlahJual += 1;
+    }
+    current.keuntungan_kotor = current.total_penjualan - current.total_pembelian;
+    byDay.set(day, current);
+  }
+
+  return {
+    total_pembelian: totalPembelian,
+    total_penjualan: totalPenjualan,
+    keuntungan_kotor: totalPenjualan - totalPembelian,
+    jumlah_transaksi_beli: jumlahBeli,
+    jumlah_transaksi_jual: jumlahJual,
+    per_hari: Array.from(byDay.values()),
+  };
+}
+
+export interface LaporanBarangBaris {
+  barang_id: number;
+  barang_nama: string;
+  katalog: 'beli' | 'jual';
+  satuan: string;
+  qty_beli: number;
+  nilai_beli: number;
+  qty_jual: number;
+  nilai_jual: number;
+  stok: number;
+  nilai_stok: number;
+}
+
+export async function getLaporanSemuaBarang(start: string, end: string): Promise<LaporanBarangBaris[]> {
+  const db = await openDatabase();
+  const rows = await db.getAllAsync<LaporanBarangBaris>(
+    `SELECT
+      b.id as barang_id,
+      b.nama as barang_nama,
+      b.katalog as katalog,
+      b.satuan_default as satuan,
+      COALESCE(SUM(CASE WHEN t.jenis = 'beli' THEN ti.quantity ELSE 0 END), 0) as qty_beli,
+      COALESCE(SUM(CASE WHEN t.jenis = 'beli' THEN ti.sub_total ELSE 0 END), 0) as nilai_beli,
+      COALESCE(SUM(CASE WHEN t.jenis = 'jual' THEN ti.quantity ELSE 0 END), 0) as qty_jual,
+      COALESCE(SUM(CASE WHEN t.jenis = 'jual' THEN ti.sub_total ELSE 0 END), 0) as nilai_jual,
+      COALESCE((SELECT SUM(quantity) FROM stok WHERE barang_id = b.id), 0) as stok,
+      COALESCE((SELECT SUM(total_nilai) FROM stok WHERE barang_id = b.id), 0) as nilai_stok
+     FROM barang b
+     LEFT JOIN transaksi_item ti ON ti.barang_id = b.id
+     LEFT JOIN transaksi t ON t.id = ti.transaksi_id
+       AND t.status = 'lunas'
+       AND t.tanggal >= ?
+       AND t.tanggal < ?
+     WHERE b.status = 'aktif'
+     GROUP BY b.id
+     ORDER BY b.nama ASC`,
+    [start, end]
+  );
+  return rows || [];
+}
 
 /**
  * Get daily report for a specific date

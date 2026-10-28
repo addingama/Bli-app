@@ -34,19 +34,19 @@ export default function MenuScreen() {
           title="Laporan Keuangan"
           left={(props) => <List.Icon {...props} icon="cash-multiple" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('LaporanKeuangan')}
         />
         <List.Item
           title="Laporan Stok"
           left={(props) => <List.Icon {...props} icon="package-variant" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('LaporanStok')}
         />
         <List.Item
           title="Laporan per Barang"
           left={(props) => <List.Icon {...props} icon="chart-bar" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('LaporanBarang')}
         />
       </View>
 

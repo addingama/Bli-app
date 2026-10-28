@@ -22,6 +22,9 @@ export type RootStackParamList = {
   TransactionDetail: {
     transaksiId: number;
   };
+  LaporanKeuangan: undefined;
+  LaporanStok: undefined;
+  LaporanBarang: undefined;
   StockDetail: {
     barangId: number;
   };

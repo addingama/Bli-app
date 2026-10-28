@@ -20,6 +20,9 @@ import BuyTransactionScreen from '../screens/BuyTransactionScreen';
 import SellTransactionScreen from '../screens/SellTransactionScreen';
 import TransactionSuccessScreen from '../screens/TransactionSuccessScreen';
 import TransactionDetailScreen from '../screens/TransactionDetailScreen';
+import LaporanKeuanganScreen from '../screens/LaporanKeuanganScreen';
+import LaporanStokScreen from '../screens/LaporanStokScreen';
+import LaporanBarangScreen from '../screens/LaporanBarangScreen';
 import BarangListScreen from '../screens/BarangListScreen';
 import BarangFormScreen from '../screens/BarangFormScreen';
 import SupplierListScreen from '../screens/SupplierListScreen';
@@ -182,6 +185,30 @@ export default function AppNavigator() {
           component={TransactionDetailScreen}
           options={{
             title: 'Detail Transaksi',
+            headerBackTitle: 'Kembali',
+          }}
+        />
+        <Stack.Screen
+          name="LaporanKeuangan"
+          component={LaporanKeuanganScreen}
+          options={{
+            title: 'Laporan Keuangan',
+            headerBackTitle: 'Kembali',
+          }}
+        />
+        <Stack.Screen
+          name="LaporanStok"
+          component={LaporanStokScreen}
+          options={{
+            title: 'Laporan Stok',
+            headerBackTitle: 'Kembali',
+          }}
+        />
+        <Stack.Screen
+          name="LaporanBarang"
+          component={LaporanBarangScreen}
+          options={{
+            title: 'Laporan per Barang',
             headerBackTitle: 'Kembali',
           }}
         />
