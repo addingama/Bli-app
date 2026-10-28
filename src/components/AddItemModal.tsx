@@ -334,9 +334,9 @@ export default function AddItemModal({ visible, onDismiss, onAdd, jenis }: AddIt
     setSatuan(barang.satuan_default);
 
     if (jenis === 'beli' && barang.harga_beli_terakhir > 0) {
-      setHargaSatuan(barang.harga_beli_terakhir.toString());
+      setHargaSatuan(formatCurrency(barang.harga_beli_terakhir, false));
     } else if (jenis === 'jual' && barang.harga_jual_terakhir > 0) {
-      setHargaSatuan(barang.harga_jual_terakhir.toString());
+      setHargaSatuan(formatCurrency(barang.harga_jual_terakhir, false));
     }
 
     setStep('form');

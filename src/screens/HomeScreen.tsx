@@ -3,7 +3,7 @@
  * Dashboard with summary and quick actions
  */
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -15,19 +15,27 @@ import {
   Text,
   Button,
   useTheme,
+  List,
 } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../types';
+import { format } from 'date-fns';
+import type { RootStackParamList, Transaksi } from '../types';
 import { formatCurrency } from '../utils/formatCurrency';
 import { spacing } from '../theme/theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+function formatMargin(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  const text = rounded.toFixed(1).replace('.', ',');
+  return `${rounded > 0 ? '+' : ''}${text}%`;
+}
+
 export default function HomeScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const [summary, setSummary] = React.useState({
+  const [summary, setSummary] = useState({
     pembelian: 0,
     penjualan: 0,
     transaksi_beli: 0,
@@ -36,16 +44,10 @@ export default function HomeScreen() {
     total_stok: 0,
     nilai_stok: 0,
   });
-  const [loading, setLoading] = React.useState(true);
+  const [recent, setRecent] = useState<Transaksi[]>([]);
 
-  // Load data on mount and when screen is focused
-  React.useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
-      setLoading(true);
       const { getTransaksiHariIni } = await import('../database/queries/transaksi');
       const data = await getTransaksiHariIni();
       setSummary({
@@ -57,12 +59,21 @@ export default function HomeScreen() {
         total_stok: data.total_stok_items,
         nilai_stok: data.total_nilai_stok,
       });
+      setRecent(data.transaksi);
     } catch (error) {
       console.error('[HomeScreen] Error loading data:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
+  const marginPercent = summary.pembelian > 0
+    ? (summary.keuntungan / summary.pembelian) * 100
+    : null;
 
   return (
     <ScrollView style={styles.container}>
@@ -104,9 +115,11 @@ export default function HomeScreen() {
             <Text style={[styles.profitValue, { color: theme.colors.primary }]}>
               {formatCurrency(summary.keuntungan)}
             </Text>
-            <Text style={[styles.profitPercent, { color: theme.colors.onSurfaceVariant }]}>
-              +37.5%
-            </Text>
+            {marginPercent !== null && (
+              <Text style={[styles.profitPercent, { color: theme.colors.onSurfaceVariant }]}>
+                {formatMargin(marginPercent)}
+              </Text>
+            )}
           </View>
         </Card.Content>
       </Card>
@@ -169,9 +182,36 @@ export default function HomeScreen() {
       <View style={styles.activityContainer}>
         <Title style={styles.sectionTitle}>📋 AKTIVITAS TERAKHIR</Title>
         
-        <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
-          Belum ada transaksi hari ini
-        </Text>
+        {recent.length === 0 ? (
+          <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
+            Belum ada transaksi hari ini
+          </Text>
+        ) : (
+          recent.map(item => {
+            const isBeli = item.jenis === 'beli';
+            const partner = isBeli ? item.supplier_nama : item.pembeli_nama;
+            return (
+              <List.Item
+                key={item.id}
+                title={partner || (isBeli ? 'Pembelian' : 'Penjualan')}
+                description={`${isBeli ? 'Beli' : 'Jual'} • ${format(new Date(item.tanggal), 'HH:mm')} • ${item.total_items} item`}
+                left={props => (
+                  <List.Icon
+                    {...props}
+                    icon={isBeli ? 'cart-arrow-down' : 'cart-arrow-up'}
+                    color={isBeli ? theme.colors.primary : theme.colors.secondary}
+                  />
+                )}
+                right={() => (
+                  <Text style={[styles.activityAmount, { color: isBeli ? theme.colors.primary : theme.colors.secondary }]}>
+                    {formatCurrency(item.total_nilai)}
+                  </Text>
+                )}
+                onPress={() => navigation.navigate('TransactionDetail', { transaksiId: item.id })}
+              />
+            );
+          })
+        )}
       </View>
 
       <View style={styles.bottomPadding} />
@@ -253,6 +293,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
     padding: spacing.lg,
+  },
+  activityAmount: {
+    alignSelf: 'center',
+    fontSize: 14,
+    fontWeight: '500',
   },
   bottomPadding: {
     height: spacing.xl,

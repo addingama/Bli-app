@@ -389,13 +389,19 @@ export async function getTransaksiList(filters?: {
   }
 }
 
+function localDayRange(now = new Date()): { start: string; end: string } {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
 /**
- * Get today's transaction summary
+ * Get today's transaction summary in the device's local calendar day.
  */
-export async function getTransaksiHariIni(): Promise<DashboardSummary> {
+export async function getTransaksiHariIni(): Promise<DashboardSummary & { transaksi: Transaksi[] }> {
   try {
     const db = await openDatabase();
-    const today = new Date().toISOString().split('T')[0];
+    const { start, end } = localDayRange();
     
     const result = await db.getFirstAsync<{
       total_pembelian: number;
@@ -409,19 +415,25 @@ export async function getTransaksiHariIni(): Promise<DashboardSummary> {
         SUM(CASE WHEN jenis = 'beli' THEN 1 ELSE 0 END) as jumlah_transaksi_beli,
         SUM(CASE WHEN jenis = 'jual' THEN 1 ELSE 0 END) as jumlah_transaksi_jual
        FROM transaksi
-       WHERE DATE(tanggal) = ? AND status = 'lunas'`,
-      [today]
+       WHERE tanggal >= ? AND tanggal < ? AND status = 'lunas'`,
+      [start, end]
+    );
+
+    const transaksi = await db.getAllAsync<Transaksi>(
+      `SELECT * FROM transaksi
+       WHERE tanggal >= ? AND tanggal < ? AND status = 'lunas'
+       ORDER BY tanggal DESC, id DESC`,
+      [start, end]
     );
     
     const stokSummary = await db.getFirstAsync<{
       total_stok_items: number;
       total_nilai_stok: number;
     }>(
-      `SELECT 
-        COUNT(DISTINCT barang_id) as total_stok_items,
-        SUM(total_nilai) as total_nilai_stok
-       FROM stok
-       WHERE quantity > 0`
+      `SELECT
+        COUNT(*) as total_stok_items,
+        COALESCE(SUM(total_nilai_stok), 0) as total_nilai_stok
+       FROM v_ringkasan_stok`
     );
     
     return {
@@ -432,6 +444,7 @@ export async function getTransaksiHariIni(): Promise<DashboardSummary> {
       keuntungan_kotor: (result?.total_penjualan || 0) - (result?.total_pembelian || 0),
       total_stok_items: stokSummary?.total_stok_items || 0,
       total_nilai_stok: stokSummary?.total_nilai_stok || 0,
+      transaksi: transaksi || [],
     };
   } catch (error) {
     console.error('[Transaksi] Error getting today summary:', error);

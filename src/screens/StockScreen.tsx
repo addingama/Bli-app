@@ -28,7 +28,7 @@ import {
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RingkasanStok } from '../types';
-import { formatCurrency } from '../utils/formatCurrency';
+import { formatCurrency, formatCurrencyInput, parseCurrency } from '../utils/formatCurrency';
 import { formatQuantity, parseQuantity, sanitizeQuantityInput } from '../utils/formatQuantity';
 import { spacing } from '../theme/theme';
 import EmptyState from '../components/EmptyState';
@@ -48,6 +48,7 @@ export default function StockScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [adjustTarget, setAdjustTarget] = useState<RingkasanStok | null>(null);
   const [adjustQuantity, setAdjustQuantity] = useState('');
+  const [adjustHarga, setAdjustHarga] = useState('');
   const [adjusting, setAdjusting] = useState(false);
   
   // Summary stats
@@ -130,22 +131,30 @@ export default function StockScreen() {
   };
 
   const openAdjust = (item: RingkasanStok) => {
+    const hargaAwal = item.harga_beli_rata > 0 ? item.harga_beli_rata : item.harga_jual_terakhir;
     setAdjustTarget(item);
     setAdjustQuantity(formatQuantity(item.stok_quantity));
+    setAdjustHarga(hargaAwal > 0 ? formatCurrency(hargaAwal, false) : '');
   };
 
   const closeAdjust = () => {
     if (adjusting) return;
     setAdjustTarget(null);
     setAdjustQuantity('');
+    setAdjustHarga('');
   };
 
   const saveAdjust = async () => {
     if (!adjustTarget) return;
 
     const quantity = parseQuantity(adjustQuantity);
+    const harga = parseCurrency(adjustHarga);
     if (!Number.isFinite(quantity) || quantity < 0) {
       Alert.alert('Quantity tidak valid', 'Isi berat dengan angka, misalnya 10,5');
+      return;
+    }
+    if (!Number.isFinite(harga) || harga <= 0) {
+      Alert.alert('Harga tidak valid', 'Isi harga per satuan, misalnya 5.000');
       return;
     }
 
@@ -158,9 +167,11 @@ export default function StockScreen() {
         grade: adjustTarget.grade ?? null,
         satuan: adjustTarget.satuan || 'kg',
         quantity,
+        harga,
       });
       setAdjustTarget(null);
       setAdjustQuantity('');
+      setAdjustHarga('');
       await loadData();
     } catch (error) {
       console.error('[StockScreen] Error adjusting stock:', error);
@@ -363,13 +374,26 @@ export default function StockScreen() {
             </Text>
             <TextInput
               mode="outlined"
-              label="Quantity baru"
+              label="Quantity"
               value={adjustQuantity}
               onChangeText={value => setAdjustQuantity(sanitizeQuantityInput(value))}
               keyboardType="decimal-pad"
               placeholder="0"
+              style={styles.adjustField}
               right={<TextInput.Affix text={adjustTarget?.satuan || 'kg'} />}
             />
+            <TextInput
+              mode="outlined"
+              label={`Harga per ${adjustTarget?.satuan || 'kg'}`}
+              value={adjustHarga}
+              onChangeText={value => setAdjustHarga(formatCurrencyInput(value))}
+              keyboardType="number-pad"
+              placeholder="0"
+              left={<TextInput.Affix text="Rp" />}
+            />
+            <Text variant="bodySmall" style={styles.adjustHint}>
+              Harga ini menjadi nilai stok dan terisi otomatis saat menjual.
+            </Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={closeAdjust} disabled={adjusting}>Batal</Button>
@@ -476,6 +500,13 @@ const styles = StyleSheet.create({
   },
   adjustName: {
     marginBottom: spacing.md,
+  },
+  adjustField: {
+    marginBottom: spacing.md,
+  },
+  adjustHint: {
+    marginTop: spacing.sm,
+    color: '#757575',
   },
   adjustButton: {
     alignSelf: 'center',

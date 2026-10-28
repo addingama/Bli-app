@@ -228,13 +228,19 @@ export async function adjustStok(input: {
   grade?: string | null;
   satuan: string;
   quantity: number;
+  harga: number;
 }): Promise<void> {
   const db = await openDatabase();
   const grade = input.grade ?? null;
   const newQuantity = roundQuantity(input.quantity);
 
+  const hargaSatuan = input.harga;
+
   if (!Number.isFinite(newQuantity) || newQuantity < 0) {
     throw new Error('Quantity tidak valid');
+  }
+  if (!Number.isFinite(hargaSatuan) || hargaSatuan < 0) {
+    throw new Error('Harga tidak valid');
   }
 
   try {
@@ -250,24 +256,30 @@ export async function adjustStok(input: {
     );
 
     const oldQuantity = existing?.quantity ?? 0;
-    const hargaRata = existing?.harga_beli_rata ?? 0;
+    const totalNilai = newQuantity * hargaSatuan;
 
     if (existing) {
       await db.runAsync(
         `UPDATE stok SET
           quantity = ?,
+          harga_beli_rata = ?,
           total_nilai = ?,
           updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [newQuantity, newQuantity * hargaRata, existing.id]
+        [newQuantity, hargaSatuan, totalNilai, existing.id]
       );
     } else {
       await db.runAsync(
         `INSERT INTO stok (barang_id, barang_nama, grade, quantity, satuan, harga_beli_rata, total_nilai)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [input.barangId, input.barangNama, grade, newQuantity, input.satuan, 0, 0]
+        [input.barangId, input.barangNama, grade, newQuantity, input.satuan, hargaSatuan, totalNilai]
       );
     }
+
+    await db.runAsync(
+      `UPDATE barang SET harga_jual_terakhir = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [hargaSatuan, input.barangId]
+    );
 
     const delta = roundQuantity(newQuantity - oldQuantity);
     await db.runAsync(
@@ -284,8 +296,8 @@ export async function adjustStok(input: {
         delta < 0 ? Math.abs(delta) : 0,
         newQuantity,
         input.satuan,
-        hargaRata,
-        Math.abs(delta) * hargaRata,
+        hargaSatuan,
+        Math.abs(delta) * hargaSatuan,
         'Penyesuaian manual',
       ]
     );
