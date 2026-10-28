@@ -27,7 +27,9 @@ import { formatCurrency } from '../utils/formatCurrency';
 import { formatQuantity } from '../utils/formatQuantity';
 import { spacing } from '../theme/theme';
 import AddItemModal from '../components/AddItemModal';
+import PartnerPicker from '../components/PartnerPicker';
 import { createTransaksiBeli } from '../database/queries/transaksi';
+import { usePartnerField } from '../hooks/usePartnerField';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -35,8 +37,7 @@ export default function BuyTransactionScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
   
-  const [supplierName, setSupplierName] = React.useState('');
-  const [phoneNumber, setPhoneNumber] = React.useState('');
+  const partner = usePartnerField('supplier');
   const [items, setItems] = React.useState<TransaksiItemInput[]>([]);
   const [metodeBayar, setMetodeBayar] = React.useState<'cash' | 'transfer'>('cash');
   const [catatan, setCatatan] = React.useState('');
@@ -59,13 +60,19 @@ export default function BuyTransactionScreen() {
       return;
     }
 
+    const supplier = await partner.resolveForTransaction();
+    if (!supplier) {
+      return;
+    }
+
     try {
       setSaving(true);
 
       const result = await createTransaksiBeli({
         jenis: 'beli',
-        supplier_nama: supplierName || 'Walk-in',
-        nomor_hp: phoneNumber || undefined,
+        supplier_id: supplier.id,
+        supplier_nama: supplier.nama,
+        nomor_hp: supplier.nomorHp,
         items,
         total_nilai: totalNilai,
         metode_bayar: metodeBayar,
@@ -90,28 +97,25 @@ export default function BuyTransactionScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
         {/* Supplier Info */}
         <View style={styles.section}>
           <Title style={styles.sectionTitle}>📍 INFORMASI SUPPLIER</Title>
           
-          <TextInput
-            mode="outlined"
-            label="Nama Supplier"
-            value={supplierName}
-            onChangeText={setSupplierName}
-            style={styles.input}
-            placeholder="Masukkan nama supplier (opsional)"
-          />
-          
-          <TextInput
-            mode="outlined"
-            label="No. HP"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            style={styles.input}
-            keyboardType="phone-pad"
-            placeholder="Masukkan nomor HP (opsional)"
+          <PartnerPicker
+            namaLabel="Nama Supplier"
+            nama={partner.nama}
+            nomorHp={partner.nomorHp}
+            linked={partner.partnerId != null}
+            walkIn={partner.walkIn}
+            results={partner.results}
+            onNamaChange={partner.onNamaChange}
+            onNomorHpChange={partner.onNomorHpChange}
+            onSelect={partner.selectPartner}
+            onSaveMaster={() => {
+              void partner.saveAsMaster();
+            }}
+            onWalkIn={partner.markWalkIn}
           />
         </View>
 
