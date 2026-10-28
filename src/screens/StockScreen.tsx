@@ -456,8 +456,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activeFilterChip: {
-    height: 32,
-    paddingVertical: 4,
     backgroundColor: '#E3F2FD',
   },
   sectionTitle: {
@@ -491,8 +489,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   lowStockChip: {
-    height: 32,
-    paddingVertical: 4,
     backgroundColor: '#FFEBEE',
   },
   emptyList: {

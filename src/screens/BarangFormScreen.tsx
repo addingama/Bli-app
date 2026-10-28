@@ -471,8 +471,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   selectedGradeChip: {
-    height: 32,
-    paddingVertical: 4,
     backgroundColor: '#E3F2FD',
   },
   statusRow: {

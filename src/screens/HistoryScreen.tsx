@@ -185,24 +185,26 @@ export default function HistoryScreen() {
             <Text variant="bodySmall" style={styles.itemDescription}>
               🕒 {formatDate(item.tanggal)}
             </Text>
+           <View style={styles.amountContainer}>
             <Text
-              variant="titleMedium"
-              style={[
-                styles.amountText,
-                { color: isBuy ? theme.colors.error : theme.colors.secondary }
-              ]}
-            >
-              {formatCurrency(item.total_nilai)}
-            </Text>
-            {item.metode_bayar && (
-              <Chip
-                compact
-                icon={item.metode_bayar === 'cash' ? 'cash' : 'bank-transfer'}
-                style={styles.paymentChip}
+                variant="titleMedium"
+                style={[
+                  styles.amountText,
+                  { color: isBuy ? theme.colors.error : theme.colors.secondary }
+                ]}
               >
-                {item.metode_bayar === 'cash' ? 'Tunai' : 'Transfer'}
-              </Chip>
-            )}
+                {formatCurrency(item.total_nilai)}
+              </Text>
+              {item.metode_bayar && (
+                <Chip
+                  compact
+                  icon={item.metode_bayar === 'cash' ? 'cash' : 'bank-transfer'}
+                  style={styles.paymentChip}
+                >
+                  {item.metode_bayar === 'cash' ? 'Tunai' : 'Transfer'}
+                </Chip>
+              )}
+           </View>
           </View>
         )}
         left={props => (
@@ -371,6 +373,11 @@ const styles = StyleSheet.create({
   itemDescription: {
     marginTop: spacing.xs,
     color: '#757575',
+  },
+  amountContainer: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    alignItems: 'center',
   },
   amountText: {
     fontWeight: '600',

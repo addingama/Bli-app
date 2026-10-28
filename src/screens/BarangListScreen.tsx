@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   katalogChip: {
-    height: 32,
+    
   },
   filterRow: {
     flexDirection: 'row',
@@ -380,8 +380,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activeFilterChip: {
-    height: 32,
-    paddingVertical: 4,
     backgroundColor: '#E3F2FD',
   },
   listItem: {
@@ -399,8 +397,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   gradeChip: {
-    height: 32,
-    paddingVertical: 4,
+    
   },
   itemActions: {
     flexDirection: 'row',
