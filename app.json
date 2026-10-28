@@ -7,11 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#4CAF50"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -38,13 +33,23 @@
     },
     "plugins": [
       [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#4CAF50",
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "enableFullScreenImage_legacy": true
+        }
+      ],
+      [
         "expo-sqlite",
         {
           "enableCRSQLite": false
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-font"
     ],
     "updates": {
       "enabled": true,

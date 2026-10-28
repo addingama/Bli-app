@@ -44,7 +44,7 @@ Docs: https://docs.expo.dev/eas/index.md
 
 Shared UI lives in `src/components/`. Keep a component presentational: it receives data and callbacks through props, and screens or a thin container own database access and navigation. Every component in that folder has a colocated `ComponentName.stories.tsx` that covers each visible state.
 
-Run the catalog with `yarn storybook`. Storybook replaces the app entry only when `STORYBOOK_ENABLED=true`, so a normal `yarn start` does not ship it.
+Run the catalog with `yarn storybook:start`. Storybook replaces the app entry only when `STORYBOOK_ENABLED=true`, so a normal `yarn start` does not ship it.
 
 ## Agent skills
 
