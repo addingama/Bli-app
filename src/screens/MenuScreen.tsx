@@ -81,21 +81,24 @@ export default function MenuScreen() {
         <Title style={styles.sectionTitle}>💾 BACKUP & EXPORT</Title>
         <List.Item
           title="Export ke Excel"
+          description="Bagikan data transaksi, stok, dan master"
           left={(props) => <List.Icon {...props} icon="file-excel" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('BackupExport')}
         />
         <List.Item
           title="Backup Database"
+          description="Simpan salinan lengkap database"
           left={(props) => <List.Icon {...props} icon="database" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('BackupExport')}
         />
         <List.Item
           title="Restore Database"
+          description="Kembalikan data dari file backup"
           left={(props) => <List.Icon {...props} icon="database-import" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('BackupExport')}
         />
       </View>
 

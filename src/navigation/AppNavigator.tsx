@@ -9,6 +9,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { RootStackParamList, BottomTabParamList } from '../types';
 
 // Import screens
@@ -23,6 +24,7 @@ import TransactionDetailScreen from '../screens/TransactionDetailScreen';
 import LaporanKeuanganScreen from '../screens/LaporanKeuanganScreen';
 import LaporanStokScreen from '../screens/LaporanStokScreen';
 import LaporanBarangScreen from '../screens/LaporanBarangScreen';
+import BackupExportScreen from '../screens/BackupExportScreen';
 import BarangListScreen from '../screens/BarangListScreen';
 import BarangFormScreen from '../screens/BarangFormScreen';
 import SupplierListScreen from '../screens/SupplierListScreen';
@@ -36,8 +38,11 @@ const Tab = createBottomTabNavigator<BottomTabParamList>();
 /**
  * Bottom Tab Navigator
  */
+const TAB_BAR_CONTENT_HEIGHT = 64;
+
 function BottomTabNavigator() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -61,8 +66,8 @@ function BottomTabNavigator() {
           backgroundColor: theme.colors.surface,
           borderTopWidth: 1,
           borderTopColor: theme.colors.outline,
-          height: 64,
-          paddingBottom: 8,
+          height: TAB_BAR_CONTENT_HEIGHT + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
@@ -209,6 +214,14 @@ export default function AppNavigator() {
           component={LaporanBarangScreen}
           options={{
             title: 'Laporan per Barang',
+            headerBackTitle: 'Kembali',
+          }}
+        />
+        <Stack.Screen
+          name="BackupExport"
+          component={BackupExportScreen}
+          options={{
+            title: 'Backup & Export',
             headerBackTitle: 'Kembali',
           }}
         />
