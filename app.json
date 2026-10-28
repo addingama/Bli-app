@@ -42,7 +42,8 @@
         {
           "enableCRSQLite": false
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "updates": {
       "enabled": true,
