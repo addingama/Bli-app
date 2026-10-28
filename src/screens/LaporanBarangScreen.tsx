@@ -5,16 +5,19 @@
 
 import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Card, SegmentedButtons, Text, useTheme } from 'react-native-paper';
+import { Card, Text, useTheme } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { spacing } from '../theme/theme';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatQuantity } from '../utils/formatQuantity';
 import LoadingOverlay from '../components/LoadingOverlay';
 import EmptyState from '../components/EmptyState';
+import PeriodeNavigator from '../components/PeriodeNavigator';
 import {
   boundsForPeriode,
+  canShiftPeriodeForward,
   getLaporanSemuaBarang,
+  shiftPeriode,
   type LaporanBarangBaris,
   type PeriodeLaporan,
 } from '../database/queries/reports';
@@ -22,14 +25,15 @@ import {
 export default function LaporanBarangScreen() {
   const theme = useTheme();
   const [periode, setPeriode] = useState<PeriodeLaporan>('bulan');
+  const [anchor, setAnchor] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
   const [label, setLabel] = useState('');
   const [rows, setRows] = useState<LaporanBarangBaris[]>([]);
 
-  const loadData = useCallback(async (nextPeriode: PeriodeLaporan) => {
+  const loadData = useCallback(async (nextPeriode: PeriodeLaporan, nextAnchor: Date) => {
     try {
       setLoading(true);
-      const bounds = boundsForPeriode(nextPeriode);
+      const bounds = boundsForPeriode(nextPeriode, nextAnchor);
       const data = await getLaporanSemuaBarang(bounds.start, bounds.end);
       setLabel(bounds.label);
       setRows(data);
@@ -42,24 +46,21 @@ export default function LaporanBarangScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadData(periode);
-    }, [loadData, periode])
+      loadData(periode, anchor);
+    }, [loadData, periode, anchor])
   );
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SegmentedButtons
-          value={periode}
-          onValueChange={value => setPeriode(value as PeriodeLaporan)}
-          buttons={[
-            { value: 'hari', label: 'Hari ini' },
-            { value: 'minggu', label: 'Minggu' },
-            { value: 'bulan', label: 'Bulan' },
-          ]}
-          style={styles.periode}
+        <PeriodeNavigator
+          periode={periode}
+          label={label}
+          canGoForward={canShiftPeriodeForward(periode, anchor)}
+          onPeriodeChange={setPeriode}
+          onPrevious={() => setAnchor(current => shiftPeriode(periode, current, -1))}
+          onNext={() => setAnchor(current => shiftPeriode(periode, current, 1))}
         />
-        <Text style={[styles.range, { color: theme.colors.onSurfaceVariant }]}>{label}</Text>
 
         {rows.length === 0 ? (
           <EmptyState
@@ -102,13 +103,6 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.md,
     paddingBottom: spacing.xl,
-  },
-  periode: {
-    marginBottom: spacing.sm,
-  },
-  range: {
-    marginBottom: spacing.md,
-    fontSize: 14,
   },
   card: {
     borderRadius: 12,

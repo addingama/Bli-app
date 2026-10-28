@@ -3,7 +3,7 @@
  * Reporting and analytics queries
  */
 
-import { endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from 'date-fns';
+import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { openDatabase } from '../init';
 import type { LaporanHarian } from '../types';
@@ -38,6 +38,20 @@ export function boundsForPeriode(periode: PeriodeLaporan, now = new Date()): {
     : `${format(start, 'd MMM', { locale: id })} – ${format(to, 'd MMM yyyy', { locale: id })}`;
 
   return { start: start.toISOString(), end: end.toISOString(), label };
+}
+
+/** Move the anchor by one day, week, or month. */
+export function shiftPeriode(periode: PeriodeLaporan, anchor: Date, direction: -1 | 1): Date {
+  if (periode === 'minggu') return addWeeks(anchor, direction);
+  if (periode === 'bulan') return addMonths(anchor, direction);
+  return addDays(anchor, direction);
+}
+
+/** The next period is allowed only when it has already started. */
+export function canShiftPeriodeForward(periode: PeriodeLaporan, anchor: Date, now = new Date()): boolean {
+  const shifted = shiftPeriode(periode, anchor, 1);
+  const start = new Date(boundsForPeriode(periode, shifted).start);
+  return start.getTime() <= startOfLocalDay(now).getTime();
 }
 
 export interface LaporanKeuanganHarian {

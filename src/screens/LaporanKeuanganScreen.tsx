@@ -5,7 +5,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Card, Text, Title, useTheme, SegmentedButtons, List } from 'react-native-paper';
+import { Card, Text, Title, useTheme, List } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -13,9 +13,12 @@ import { spacing } from '../theme/theme';
 import { formatCurrency } from '../utils/formatCurrency';
 import LoadingOverlay from '../components/LoadingOverlay';
 import EmptyState from '../components/EmptyState';
+import PeriodeNavigator from '../components/PeriodeNavigator';
 import {
   boundsForPeriode,
+  canShiftPeriodeForward,
   getLaporanKeuangan,
+  shiftPeriode,
   type LaporanKeuanganHarian,
   type PeriodeLaporan,
 } from '../database/queries/reports';
@@ -23,6 +26,7 @@ import {
 export default function LaporanKeuanganScreen() {
   const theme = useTheme();
   const [periode, setPeriode] = useState<PeriodeLaporan>('hari');
+  const [anchor, setAnchor] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
   const [label, setLabel] = useState('');
   const [summary, setSummary] = useState({
@@ -34,10 +38,10 @@ export default function LaporanKeuanganScreen() {
   });
   const [perHari, setPerHari] = useState<LaporanKeuanganHarian[]>([]);
 
-  const loadData = useCallback(async (nextPeriode: PeriodeLaporan) => {
+  const loadData = useCallback(async (nextPeriode: PeriodeLaporan, nextAnchor: Date) => {
     try {
       setLoading(true);
-      const bounds = boundsForPeriode(nextPeriode);
+      const bounds = boundsForPeriode(nextPeriode, nextAnchor);
       const data = await getLaporanKeuangan(bounds.start, bounds.end);
       setLabel(bounds.label);
       setSummary({
@@ -57,24 +61,21 @@ export default function LaporanKeuanganScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadData(periode);
-    }, [loadData, periode])
+      loadData(periode, anchor);
+    }, [loadData, periode, anchor])
   );
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SegmentedButtons
-          value={periode}
-          onValueChange={value => setPeriode(value as PeriodeLaporan)}
-          buttons={[
-            { value: 'hari', label: 'Hari ini' },
-            { value: 'minggu', label: 'Minggu' },
-            { value: 'bulan', label: 'Bulan' },
-          ]}
-          style={styles.periode}
+        <PeriodeNavigator
+          periode={periode}
+          label={label}
+          canGoForward={canShiftPeriodeForward(periode, anchor)}
+          onPeriodeChange={setPeriode}
+          onPrevious={() => setAnchor(current => shiftPeriode(periode, current, -1))}
+          onNext={() => setAnchor(current => shiftPeriode(periode, current, 1))}
         />
-        <Text style={[styles.range, { color: theme.colors.onSurfaceVariant }]}>{label}</Text>
 
         <Card style={styles.card}>
           <Card.Content>
@@ -139,13 +140,6 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.md,
     paddingBottom: spacing.xl,
-  },
-  periode: {
-    marginBottom: spacing.sm,
-  },
-  range: {
-    marginBottom: spacing.md,
-    fontSize: 14,
   },
   card: {
     borderRadius: 12,
