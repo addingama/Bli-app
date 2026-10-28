@@ -7,6 +7,7 @@ import { Share } from 'react-native';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { formatCurrency } from './formatCurrency';
+import { formatQuantity } from './formatQuantity';
 import type { Transaksi, TransaksiItem } from '../database/types';
 import { DATE_FORMATS } from '../constants';
 
@@ -53,7 +54,7 @@ export function generateWhatsAppReceipt(
       message += ` ${item.grade}`;
     }
     message += `\n`;
-    message += `   ${item.quantity} ${item.satuan} × ${formatCurrency(item.harga_satuan)} = ${formatCurrency(item.sub_total)}\n`;
+    message += `   ${formatQuantity(item.quantity)} ${item.satuan} × ${formatCurrency(item.harga_satuan)} = ${formatCurrency(item.sub_total)}\n`;
     if (index < items.length - 1) {
       message += `\n`;
     }

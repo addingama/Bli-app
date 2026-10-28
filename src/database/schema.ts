@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS barang (
   harga_beli_terakhir REAL DEFAULT 0,
   harga_jual_terakhir REAL DEFAULT 0,
   stok_alert_minimum REAL DEFAULT 0,
+  katalog TEXT NOT NULL DEFAULT 'jual',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -180,22 +181,23 @@ CREATE INDEX IF NOT EXISTS idx_mutasi_transaksi ON stok_mutasi(transaksi_id);
 -- VIEWS untuk Reporting
 -- ==========================================
 
--- View: Ringkasan Stok
+-- View: Ringkasan Stok (katalog penjualan saja, termasuk saldo 0)
 CREATE VIEW IF NOT EXISTS v_ringkasan_stok AS
 SELECT 
   b.id as barang_id,
   b.nama as barang_nama,
   b.kategori,
+  b.katalog,
   s.grade,
   COALESCE(s.quantity, 0) as stok_quantity,
-  s.satuan,
+  COALESCE(s.satuan, b.satuan_default) as satuan,
   COALESCE(s.harga_beli_rata, 0) as harga_beli_rata,
   COALESCE(s.total_nilai, 0) as total_nilai_stok,
   b.harga_jual_terakhir,
   b.status
 FROM barang b
 LEFT JOIN stok s ON b.id = s.barang_id
-WHERE b.status = 'aktif';
+WHERE b.status = 'aktif' AND b.katalog = 'jual';
 
 -- View: Laporan Keuangan Harian
 CREATE VIEW IF NOT EXISTS v_laporan_harian AS
@@ -208,4 +210,24 @@ SELECT
 FROM transaksi
 WHERE status = 'lunas'
 GROUP BY DATE(tanggal);
+`;
+
+/** Replaced on every launch so existing installs pick up katalog filtering. */
+export const RINGKASAN_STOK_VIEW_SQL = `
+CREATE VIEW v_ringkasan_stok AS
+SELECT 
+  b.id as barang_id,
+  b.nama as barang_nama,
+  b.kategori,
+  b.katalog,
+  s.grade,
+  COALESCE(s.quantity, 0) as stok_quantity,
+  COALESCE(s.satuan, b.satuan_default) as satuan,
+  COALESCE(s.harga_beli_rata, 0) as harga_beli_rata,
+  COALESCE(s.total_nilai, 0) as total_nilai_stok,
+  b.harga_jual_terakhir,
+  b.status
+FROM barang b
+LEFT JOIN stok s ON b.id = s.barang_id
+WHERE b.status = 'aktif' AND b.katalog = 'jual'
 `;

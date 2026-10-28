@@ -6,16 +6,24 @@
 import { openDatabase } from '../init';
 import type { Barang, BarangInput } from '../types';
 
+export type KatalogBarang = 'beli' | 'jual';
+
 /**
- * Get all active barang
+ * Get all active barang, optionally limited to one catalog.
  */
-export async function getAllBarang(): Promise<Barang[]> {
+export async function getAllBarang(katalog?: KatalogBarang): Promise<Barang[]> {
   try {
     const db = await openDatabase();
-    const result = await db.getAllAsync<Barang>(
-      'SELECT * FROM barang WHERE status = ? ORDER BY nama ASC',
-      ['aktif']
-    );
+    const params: string[] = ['aktif'];
+    let query = 'SELECT * FROM barang WHERE status = ?';
+
+    if (katalog) {
+      query += ' AND katalog = ?';
+      params.push(katalog);
+    }
+
+    query += ' ORDER BY nama ASC';
+    const result = await db.getAllAsync<Barang>(query, params);
     return result || [];
   } catch (error) {
     console.error('[Barang] Error getting all barang:', error);
@@ -43,17 +51,22 @@ export async function getBarangById(id: number): Promise<Barang | null> {
 /**
  * Search barang by keyword (name or kategori)
  */
-export async function searchBarang(keyword: string): Promise<Barang[]> {
+export async function searchBarang(keyword: string, katalog?: KatalogBarang): Promise<Barang[]> {
   try {
     const db = await openDatabase();
     const searchTerm = `%${keyword}%`;
-    const result = await db.getAllAsync<Barang>(
-      `SELECT * FROM barang 
+    const params: string[] = [searchTerm, searchTerm];
+    let query = `SELECT * FROM barang 
        WHERE status = 'aktif' 
-       AND (nama LIKE ? OR kategori LIKE ?)
-       ORDER BY nama ASC`,
-      [searchTerm, searchTerm]
-    );
+       AND (nama LIKE ? OR kategori LIKE ?)`;
+
+    if (katalog) {
+      query += ' AND katalog = ?';
+      params.push(katalog);
+    }
+
+    query += ' ORDER BY nama ASC';
+    const result = await db.getAllAsync<Barang>(query, params);
     return result || [];
   } catch (error) {
     console.error('[Barang] Error searching barang:', error);
@@ -72,8 +85,8 @@ export async function createBarang(data: BarangInput): Promise<number> {
     const gradesJson = data.grades ? JSON.stringify(data.grades) : null;
     
     const result = await db.runAsync(
-      `INSERT INTO barang (nama, kategori, satuan_default, grades, status, stok_alert_minimum)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO barang (nama, kategori, satuan_default, grades, status, stok_alert_minimum, katalog)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         data.nama,
         data.kategori || null,
@@ -81,6 +94,7 @@ export async function createBarang(data: BarangInput): Promise<number> {
         gradesJson,
         data.status || 'aktif',
         data.stok_alert_minimum || 0,
+        data.katalog,
       ]
     );
     
@@ -110,6 +124,10 @@ export async function updateBarang(id: number, data: Partial<BarangInput>): Prom
     if (data.kategori !== undefined) {
       updates.push('kategori = ?');
       values.push(data.kategori);
+    }
+    if (data.katalog !== undefined) {
+      updates.push('katalog = ?');
+      values.push(data.katalog);
     }
     if (data.satuan_default !== undefined) {
       updates.push('satuan_default = ?');
@@ -213,15 +231,22 @@ export async function updateHargaReferensi(
 }
 
 /**
- * Get all categories (distinct)
+ * Get all categories (distinct), optionally limited to one catalog.
  */
-export async function getAllKategori(): Promise<string[]> {
+export async function getAllKategori(katalog?: KatalogBarang): Promise<string[]> {
   try {
     const db = await openDatabase();
-    const result = await db.getAllAsync<{ kategori: string }>(
-      'SELECT DISTINCT kategori FROM barang WHERE kategori IS NOT NULL AND status = ? ORDER BY kategori ASC',
-      ['aktif']
-    );
+    const params: string[] = ['aktif'];
+    let query =
+      'SELECT DISTINCT kategori FROM barang WHERE kategori IS NOT NULL AND status = ?';
+
+    if (katalog) {
+      query += ' AND katalog = ?';
+      params.push(katalog);
+    }
+
+    query += ' ORDER BY kategori ASC';
+    const result = await db.getAllAsync<{ kategori: string }>(query, params);
     return result?.map(r => r.kategori) || [];
   } catch (error) {
     console.error('[Barang] Error getting all kategori:', error);

@@ -8,6 +8,7 @@ import { generateTransactionNumber } from '../../utils/generateTransactionNumber
 import { updateSupplierStats } from './supplier';
 import { updatePembeliStats } from './pembeli';
 import { updateHargaReferensi } from './barang';
+import { formatQuantity, hasEnoughQuantity, roundQuantity } from '../../utils/formatQuantity';
 import type {
   Transaksi,
   TransaksiInput,
@@ -18,7 +19,7 @@ import type {
 } from '../types';
 
 /**
- * Create buy transaction with complete stock management
+ * Create buy transaction. Purchases are financial records and do not change local stock.
  * USES DATABASE TRANSACTION
  */
 export async function createTransaksiBeli(data: TransaksiInput): Promise<TransaksiResponse> {
@@ -58,9 +59,8 @@ export async function createTransaksiBeli(data: TransaksiInput): Promise<Transak
     const transaksiId = headerResult.lastInsertRowId;
     console.log('[Transaksi] Header inserted, ID:', transaksiId);
     
-    // 3. Insert items and update stock
+    // 3. Insert items. Stock is adjusted manually for sellable goods, not from purchases.
     for (const item of data.items) {
-      // 3a. Insert item
       await db.runAsync(
         `INSERT INTO transaksi_item (
           transaksi_id, barang_id, barang_nama, barang_kategori, grade,
@@ -80,42 +80,6 @@ export async function createTransaksiBeli(data: TransaksiInput): Promise<Transak
         ]
       );
       
-      // 3b. Update or insert stock with weighted average
-      await updateStokMasuk(
-        db,
-        item.barang_id!,
-        item.barang_nama,
-        item.grade || null,
-        item.quantity,
-        item.satuan,
-        item.harga_satuan
-      );
-      
-      // 3c. Insert stock mutation
-      const currentSaldo = await getCurrentStokSaldo(db, item.barang_id!, item.grade ?? null);
-      await db.runAsync(
-        `INSERT INTO stok_mutasi (
-          barang_id, grade, tanggal, jenis_mutasi, transaksi_id, nomor_transaksi,
-          quantity_masuk, quantity_keluar, saldo, satuan, harga_satuan, nilai_mutasi, keterangan
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          item.barang_id ?? null,
-          item.grade ?? null,
-          data.tanggal || new Date().toISOString(),
-          'masuk',
-          transaksiId,
-          nomorTransaksi,
-          item.quantity,
-          0,
-          currentSaldo,
-          item.satuan,
-          item.harga_satuan,
-          item.sub_total,
-          `Pembelian dari ${data.supplier_nama || 'Walk-in'}`,
-        ]
-      );
-      
-      // 3d. Update harga referensi barang
       if (item.barang_id) {
         await updateHargaReferensi(item.barang_id, item.harga_satuan, undefined);
       }
@@ -166,8 +130,11 @@ export async function createTransaksiJual(data: TransaksiInput): Promise<Transak
         [item.barang_id, item.grade ?? null, item.grade ?? null]
       );
       
-      if (!stokCheck || stokCheck.quantity < item.quantity) {
-        throw new Error(`Stok ${item.barang_nama} tidak mencukupi. Tersedia: ${stokCheck?.quantity || 0} ${item.satuan}`);
+      const available = stokCheck?.quantity || 0;
+      if (!hasEnoughQuantity(available, item.quantity)) {
+        throw new Error(
+          `Stok ${item.barang_nama} tidak mencukupi. Tersedia: ${formatQuantity(available)} ${item.satuan}`
+        );
       }
     }
     
@@ -283,50 +250,6 @@ export async function createTransaksiJual(data: TransaksiInput): Promise<Transak
 }
 
 /**
- * Helper: Update stock when items come in (with weighted average cost)
- */
-async function updateStokMasuk(
-  db: any,
-  barangId: number,
-  barangNama: string,
-  grade: string | null,
-  quantityMasuk: number,
-  satuan: string,
-  hargaSatuan: number
-): Promise<void> {
-  // Check existing stock
-  const existing = await db.getFirstAsync(
-    'SELECT id, quantity, harga_beli_rata FROM stok WHERE barang_id = ? AND (grade = ? OR (grade IS NULL AND ? IS NULL))',
-    [barangId, grade, grade]
-  ) as { id: number; quantity: number; harga_beli_rata: number } | null;
-  
-  if (existing) {
-    // Calculate weighted average
-    const oldTotal = existing.quantity * existing.harga_beli_rata;
-    const newTotal = quantityMasuk * hargaSatuan;
-    const newQuantity = existing.quantity + quantityMasuk;
-    const newAvgPrice = (oldTotal + newTotal) / newQuantity;
-    
-    await db.runAsync(
-      `UPDATE stok SET 
-        quantity = ?,
-        harga_beli_rata = ?,
-        total_nilai = ?,
-        updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [newQuantity, newAvgPrice, newQuantity * newAvgPrice, existing.id]
-    );
-  } else {
-    // Insert new stock
-    await db.runAsync(
-      `INSERT INTO stok (barang_id, barang_nama, grade, quantity, satuan, harga_beli_rata, total_nilai)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [barangId, barangNama, grade, quantityMasuk, satuan, hargaSatuan, quantityMasuk * hargaSatuan]
-    );
-  }
-}
-
-/**
  * Helper: Update stock when items go out
  */
 async function updateStokKeluar(
@@ -340,15 +263,11 @@ async function updateStokKeluar(
     [barangId, grade, grade]
   ) as { id: number; quantity: number; harga_beli_rata: number } | null;
   
-  if (!existing) {
-    throw new Error('Stock not found');
-  }
-  
-  const newQuantity = existing.quantity - quantityKeluar;
-  
-  if (newQuantity < 0) {
+  if (!existing || !hasEnoughQuantity(existing.quantity, quantityKeluar)) {
     throw new Error('Insufficient stock');
   }
+  
+  const newQuantity = roundQuantity(existing.quantity - quantityKeluar);
   
   await db.runAsync(
     `UPDATE stok SET 

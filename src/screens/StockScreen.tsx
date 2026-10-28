@@ -22,10 +22,14 @@ import {
   Menu,
   Button,
   Divider,
+  Dialog,
+  Portal,
+  TextInput,
 } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RingkasanStok } from '../types';
 import { formatCurrency } from '../utils/formatCurrency';
+import { formatQuantity, parseQuantity, sanitizeQuantityInput } from '../utils/formatQuantity';
 import { spacing } from '../theme/theme';
 import EmptyState from '../components/EmptyState';
 import LoadingOverlay from '../components/LoadingOverlay';
@@ -42,6 +46,9 @@ export default function StockScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [adjustTarget, setAdjustTarget] = useState<RingkasanStok | null>(null);
+  const [adjustQuantity, setAdjustQuantity] = useState('');
+  const [adjusting, setAdjusting] = useState(false);
   
   // Summary stats
   const [summary, setSummary] = useState({
@@ -64,7 +71,7 @@ export default function StockScreen() {
       
       const [stock, kategoriList] = await Promise.all([
         getAllStok(),
-        getAllKategori(),
+        getAllKategori('jual'),
       ]);
       
       setStockList(stock);
@@ -122,10 +129,49 @@ export default function StockScreen() {
     setMenuVisible(false);
   };
 
+  const openAdjust = (item: RingkasanStok) => {
+    setAdjustTarget(item);
+    setAdjustQuantity(formatQuantity(item.stok_quantity));
+  };
+
+  const closeAdjust = () => {
+    if (adjusting) return;
+    setAdjustTarget(null);
+    setAdjustQuantity('');
+  };
+
+  const saveAdjust = async () => {
+    if (!adjustTarget) return;
+
+    const quantity = parseQuantity(adjustQuantity);
+    if (!Number.isFinite(quantity) || quantity < 0) {
+      Alert.alert('Quantity tidak valid', 'Isi berat dengan angka, misalnya 10,5');
+      return;
+    }
+
+    try {
+      setAdjusting(true);
+      const { adjustStok } = await import('../database/queries/stok');
+      await adjustStok({
+        barangId: adjustTarget.barang_id,
+        barangNama: adjustTarget.barang_nama,
+        grade: adjustTarget.grade ?? null,
+        satuan: adjustTarget.satuan || 'kg',
+        quantity,
+      });
+      setAdjustTarget(null);
+      setAdjustQuantity('');
+      await loadData();
+    } catch (error) {
+      console.error('[StockScreen] Error adjusting stock:', error);
+      Alert.alert('Error', 'Gagal menyesuaikan stok');
+    } finally {
+      setAdjusting(false);
+    }
+  };
+
   const renderItem = ({ item }: { item: RingkasanStok }) => {
-    // For low stock, we need to get stok_alert_minimum from barang table
-    // For now, we'll just use a default threshold
-    const isLowStock = item.stok_quantity <= 10;
+    const isLowStock = item.stok_quantity > 0 && item.stok_quantity <= 10;
     
     return (
       <List.Item
@@ -151,7 +197,7 @@ export default function StockScreen() {
                 styles.quantityText,
                 isLowStock && { color: theme.colors.error }
               ]}>
-                {item.stok_quantity} {item.satuan}
+                {formatQuantity(item.stok_quantity)} {item.satuan}
               </Text>
               {isLowStock && (
                 <Chip
@@ -177,6 +223,17 @@ export default function StockScreen() {
           />
         )}
         style={styles.listItem}
+        onPress={() => openAdjust(item)}
+        right={() => (
+          <Button
+            mode="contained-tonal"
+            compact
+            onPress={() => openAdjust(item)}
+            style={styles.adjustButton}
+          >
+            Sesuaikan
+          </Button>
+        )}
       />
     );
   };
@@ -266,12 +323,10 @@ export default function StockScreen() {
     </View>
   );
 
-  if (loading) {
-    return <LoadingOverlay visible={loading} message="Memuat data stok..." />;
-  }
-
   return (
+    <Portal.Host>
     <View style={styles.container}>
+      {loading && <LoadingOverlay visible message="Memuat data stok..." />}
       <FlatList
         data={filteredList}
         renderItem={renderItem}
@@ -284,7 +339,7 @@ export default function StockScreen() {
             message={
               searchQuery || selectedCategory
                 ? 'Tidak ada barang yang sesuai dengan pencarian'
-                : 'Stok akan muncul setelah ada transaksi pembelian'
+                : 'Tambahkan barang katalog penjualan, lalu tekan Sesuaikan untuk mengisi stok'
             }
           />
         }
@@ -293,7 +348,37 @@ export default function StockScreen() {
         }
         contentContainerStyle={filteredList.length === 0 ? styles.emptyList : undefined}
       />
+
+      <Portal>
+        <Dialog
+          visible={adjustTarget !== null}
+          onDismiss={closeAdjust}
+          style={{ backgroundColor: theme.colors.surface }}
+        >
+          <Dialog.Title>Sesuaikan Stok</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium" style={styles.adjustName}>
+              {adjustTarget?.barang_nama}
+              {adjustTarget?.grade ? ` (${adjustTarget.grade})` : ''}
+            </Text>
+            <TextInput
+              mode="outlined"
+              label="Quantity baru"
+              value={adjustQuantity}
+              onChangeText={value => setAdjustQuantity(sanitizeQuantityInput(value))}
+              keyboardType="decimal-pad"
+              placeholder="0"
+              right={<TextInput.Affix text={adjustTarget?.satuan || 'kg'} />}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={closeAdjust} disabled={adjusting}>Batal</Button>
+            <Button onPress={saveAdjust} loading={adjusting} disabled={adjusting}>Simpan</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
+    </Portal.Host>
   );
 }
 
@@ -388,5 +473,11 @@ const styles = StyleSheet.create({
   },
   emptyList: {
     flex: 1,
+  },
+  adjustName: {
+    marginBottom: spacing.md,
+  },
+  adjustButton: {
+    alignSelf: 'center',
   },
 });

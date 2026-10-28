@@ -5,6 +5,7 @@
 
 import { openDatabase } from '../init';
 import type { Stok, StokMutasi, RingkasanStok } from '../types';
+import { hasEnoughQuantity, roundQuantity } from '../../utils/formatQuantity';
 
 /**
  * Get all stock
@@ -103,7 +104,7 @@ export async function checkStokAvailable(
     const currentStock = result?.quantity || 0;
     
     return {
-      available: currentStock >= quantity,
+      available: hasEnoughQuantity(currentStock, quantity),
       current_stock: currentStock,
     };
   } catch (error) {
@@ -214,6 +215,85 @@ export async function searchStok(keyword: string): Promise<RingkasanStok[]> {
     return result || [];
   } catch (error) {
     console.error('[Stok] Error searching stock:', error);
+    throw error;
+  }
+}
+
+/**
+ * Set an absolute stock balance for a sellable item and record an adjustment.
+ */
+export async function adjustStok(input: {
+  barangId: number;
+  barangNama: string;
+  grade?: string | null;
+  satuan: string;
+  quantity: number;
+}): Promise<void> {
+  const db = await openDatabase();
+  const grade = input.grade ?? null;
+  const newQuantity = roundQuantity(input.quantity);
+
+  if (!Number.isFinite(newQuantity) || newQuantity < 0) {
+    throw new Error('Quantity tidak valid');
+  }
+
+  try {
+    await db.execAsync('BEGIN TRANSACTION');
+
+    const existing = await db.getFirstAsync<{
+      id: number;
+      quantity: number;
+      harga_beli_rata: number;
+    }>(
+      'SELECT id, quantity, harga_beli_rata FROM stok WHERE barang_id = ? AND (grade = ? OR (grade IS NULL AND ? IS NULL))',
+      [input.barangId, grade, grade]
+    );
+
+    const oldQuantity = existing?.quantity ?? 0;
+    const hargaRata = existing?.harga_beli_rata ?? 0;
+
+    if (existing) {
+      await db.runAsync(
+        `UPDATE stok SET
+          quantity = ?,
+          total_nilai = ?,
+          updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [newQuantity, newQuantity * hargaRata, existing.id]
+      );
+    } else {
+      await db.runAsync(
+        `INSERT INTO stok (barang_id, barang_nama, grade, quantity, satuan, harga_beli_rata, total_nilai)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [input.barangId, input.barangNama, grade, newQuantity, input.satuan, 0, 0]
+      );
+    }
+
+    const delta = roundQuantity(newQuantity - oldQuantity);
+    await db.runAsync(
+      `INSERT INTO stok_mutasi (
+        barang_id, grade, tanggal, jenis_mutasi,
+        quantity_masuk, quantity_keluar, saldo, satuan, harga_satuan, nilai_mutasi, keterangan
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        input.barangId,
+        grade,
+        new Date().toISOString(),
+        'adjustment',
+        delta > 0 ? delta : 0,
+        delta < 0 ? Math.abs(delta) : 0,
+        newQuantity,
+        input.satuan,
+        hargaRata,
+        Math.abs(delta) * hargaRata,
+        'Penyesuaian manual',
+      ]
+    );
+
+    await db.execAsync('COMMIT');
+  } catch (error) {
+    await db.execAsync('ROLLBACK');
+    console.error('[Stok] Error adjusting stock:', error);
     throw error;
   }
 }

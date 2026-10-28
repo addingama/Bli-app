@@ -27,6 +27,7 @@ import type { RootStackParamList, BarangInput } from '../types';
 import { spacing } from '../theme/theme';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { formatQuantity, parseQuantity, sanitizeQuantityInput } from '../utils/formatQuantity';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'BarangForm'>;
@@ -34,6 +35,7 @@ type RouteProps = RouteProp<RootStackParamList, 'BarangForm'>;
 interface FormData {
   nama: string;
   kategori: string;
+  katalog: 'beli' | 'jual';
   satuan_default: string;
   grades: string[];
   status: 'aktif' | 'nonaktif';
@@ -60,6 +62,7 @@ export default function BarangFormScreen() {
   const [formData, setFormData] = useState<FormData>({
     nama: '',
     kategori: '',
+    katalog: 'jual',
     satuan_default: 'kg',
     grades: [],
     status: 'aktif',
@@ -95,10 +98,11 @@ export default function BarangFormScreen() {
       setFormData({
         nama: barang.nama,
         kategori: barang.kategori || '',
+        katalog: barang.katalog === 'beli' ? 'beli' : 'jual',
         satuan_default: barang.satuan_default,
         grades: barang.grades ? JSON.parse(barang.grades) : [],
         status: barang.status as 'aktif' | 'nonaktif',
-        stok_alert_minimum: barang.stok_alert_minimum.toString(),
+        stok_alert_minimum: formatQuantity(barang.stok_alert_minimum),
       });
     } catch (error) {
       console.error('[BarangForm] Error loading barang:', error);
@@ -161,13 +165,16 @@ export default function BarangFormScreen() {
       setSaving(true);
       const { createBarang, updateBarang } = await import('../database/queries/barang');
       
+      const alertMinimum = parseQuantity(formData.stok_alert_minimum);
       const barangData: BarangInput = {
         nama: formData.nama.trim(),
         kategori: formData.kategori.trim() || undefined,
+        katalog: formData.katalog,
         satuan_default: formData.satuan_default,
         grades: formData.grades.length > 0 ? formData.grades : undefined,
         status: formData.status,
-        stok_alert_minimum: parseInt(formData.stok_alert_minimum) || 0,
+        stok_alert_minimum:
+          formData.katalog === 'jual' && Number.isFinite(alertMinimum) ? alertMinimum : 0,
       };
       
       if (isEditMode && barangId) {
@@ -242,6 +249,17 @@ export default function BarangFormScreen() {
               {errors.nama}
             </Text>
           )}
+
+          <Text style={styles.label}>Katalog *</Text>
+          <SegmentedButtons
+            value={formData.katalog}
+            onValueChange={value => updateField('katalog', value as 'beli' | 'jual')}
+            buttons={[
+              { value: 'beli', label: 'Pembelian' },
+              { value: 'jual', label: 'Penjualan' },
+            ]}
+            style={styles.katalogButtons}
+          />
 
           {/* Kategori */}
           <TextInput
@@ -324,17 +342,18 @@ export default function BarangFormScreen() {
             )}
           </View>
 
-          {/* Stok Alert Minimum */}
-          <TextInput
-            mode="outlined"
-            label="Stok Alert Minimum"
-            value={formData.stok_alert_minimum}
-            onChangeText={value => updateField('stok_alert_minimum', value.replace(/[^0-9]/g, ''))}
-            keyboardType="number-pad"
-            style={styles.input}
-            placeholder="0"
-            right={<TextInput.Affix text={formData.satuan_default} />}
-          />
+          {formData.katalog === 'jual' && (
+            <TextInput
+              mode="outlined"
+              label="Stok Alert Minimum"
+              value={formData.stok_alert_minimum}
+              onChangeText={value => updateField('stok_alert_minimum', sanitizeQuantityInput(value))}
+              keyboardType="decimal-pad"
+              style={styles.input}
+              placeholder="0"
+              right={<TextInput.Affix text={formData.satuan_default} />}
+            />
+          )}
 
           {/* Status */}
           <View style={styles.statusRow}>
@@ -408,6 +427,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: spacing.sm,
     color: '#616161',
+  },
+  katalogButtons: {
+    marginBottom: spacing.md,
   },
   errorText: {
     fontSize: 12,

@@ -19,6 +19,7 @@ import MenuScreen from '../screens/MenuScreen';
 import BuyTransactionScreen from '../screens/BuyTransactionScreen';
 import SellTransactionScreen from '../screens/SellTransactionScreen';
 import TransactionSuccessScreen from '../screens/TransactionSuccessScreen';
+import TransactionDetailScreen from '../screens/TransactionDetailScreen';
 import BarangListScreen from '../screens/BarangListScreen';
 import BarangFormScreen from '../screens/BarangFormScreen';
 import SupplierListScreen from '../screens/SupplierListScreen';
@@ -174,6 +175,14 @@ export default function AppNavigator() {
             title: 'Transaksi Berhasil',
             headerBackTitle: 'Kembali',
             headerLeft: () => null,
+          }}
+        />
+        <Stack.Screen
+          name="TransactionDetail"
+          component={TransactionDetailScreen}
+          options={{
+            title: 'Detail Transaksi',
+            headerBackTitle: 'Kembali',
           }}
         />
         <Stack.Screen

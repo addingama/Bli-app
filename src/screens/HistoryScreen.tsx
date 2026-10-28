@@ -21,15 +21,19 @@ import {
   Chip,
   Badge,
 } from 'react-native-paper';
-import { useFocusEffect } from '@react-navigation/native';
-import type { Transaksi, JenisTransaksi } from '../types';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList, Transaksi } from '../types';
 import { formatCurrency } from '../utils/formatCurrency';
 import { spacing } from '../theme/theme';
 import EmptyState from '../components/EmptyState';
 import LoadingOverlay from '../components/LoadingOverlay';
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function HistoryScreen() {
   const theme = useTheme();
+  const navigation = useNavigation<NavigationProp>();
   
   // State
   const [transactionList, setTransactionList] = useState<Transaksi[]>([]);
@@ -224,13 +228,7 @@ export default function HistoryScreen() {
           </View>
         )}
         style={styles.listItem}
-        onPress={() => {
-          // TODO: Navigate to transaction detail
-          Alert.alert(
-            'Detail Transaksi',
-            `Nomor: ${item.nomor_transaksi}\nTotal: ${formatCurrency(item.total_nilai)}`
-          );
-        }}
+        onPress={() => navigation.navigate('TransactionDetail', { transaksiId: item.id })}
       />
     );
   };

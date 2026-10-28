@@ -17,6 +17,7 @@ export interface Barang {
   harga_beli_terakhir: number;
   harga_jual_terakhir: number;
   stok_alert_minimum: number;
+  katalog: 'beli' | 'jual';
   created_at: string;
   updated_at: string;
 }
@@ -135,6 +136,7 @@ export interface RingkasanStok {
   barang_id: number;
   barang_nama: string;
   kategori?: string;
+  katalog?: 'beli' | 'jual';
   grade?: string;
   stok_quantity: number;
   satuan?: string;
@@ -158,6 +160,7 @@ export interface LaporanHarian {
 export interface BarangInput {
   nama: string;
   kategori?: string;
+  katalog: 'beli' | 'jual';
   satuan_default: string;
   grades?: string[];
   status?: 'aktif' | 'nonaktif';

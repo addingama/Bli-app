@@ -42,6 +42,7 @@ export default function BarangListScreen() {
   const [filteredList, setFilteredList] = useState<Barang[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedKatalog, setSelectedKatalog] = useState<'beli' | 'jual' | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,11 +91,19 @@ export default function BarangListScreen() {
 
   // Search and filter logic (testable)
   useEffect(() => {
-    filterData(searchQuery, selectedCategory);
-  }, [searchQuery, selectedCategory, barangList]);
+    filterData(searchQuery, selectedCategory, selectedKatalog);
+  }, [searchQuery, selectedCategory, selectedKatalog, barangList]);
 
-  const filterData = (query: string, category: string | null) => {
+  const filterData = (
+    query: string,
+    category: string | null,
+    katalog: 'beli' | 'jual' | null
+  ) => {
     let filtered = [...barangList];
+
+    if (katalog) {
+      filtered = filtered.filter(b => b.katalog === katalog);
+    }
     
     // Apply category filter
     if (category) {
@@ -145,6 +154,16 @@ export default function BarangListScreen() {
     }
   };
 
+  const visibleCategories = selectedKatalog
+    ? Array.from(
+        new Set(
+          barangList
+            .filter(b => b.katalog === selectedKatalog && b.kategori)
+            .map(b => b.kategori as string)
+        )
+      )
+    : categories;
+
   const handleCategorySelect = (category: string | null) => {
     setSelectedCategory(category);
     setMenuVisible(false);
@@ -159,7 +178,7 @@ export default function BarangListScreen() {
         description={() => (
           <View>
             <Text variant="bodySmall" style={styles.itemDescription}>
-              {item.kategori || 'Lainnya'} • {item.satuan_default}
+              {item.katalog === 'beli' ? 'Pembelian' : 'Penjualan'} • {item.kategori || 'Lainnya'} • {item.satuan_default}
             </Text>
             {grades.length > 0 && (
               <View style={styles.gradesContainer}>
@@ -217,6 +236,23 @@ export default function BarangListScreen() {
         style={styles.searchBar}
       />
       
+      <View style={styles.katalogRow}>
+        {([
+          { value: null, label: 'Semua' },
+          { value: 'beli' as const, label: 'Pembelian' },
+          { value: 'jual' as const, label: 'Penjualan' },
+        ]).map(option => (
+          <Chip
+            key={option.label}
+            selected={selectedKatalog === option.value}
+            onPress={() => setSelectedKatalog(option.value)}
+            style={styles.katalogChip}
+          >
+            {option.label}
+          </Chip>
+        ))}
+      </View>
+
       <View style={styles.filterRow}>
         <Menu
           visible={menuVisible}
@@ -238,7 +274,7 @@ export default function BarangListScreen() {
             leadingIcon={!selectedCategory ? 'check' : undefined}
           />
           <Divider />
-          {categories.map(cat => (
+          {visibleCategories.map(cat => (
             <Menu.Item
               key={cat}
               onPress={() => handleCategorySelect(cat)}
@@ -277,12 +313,12 @@ export default function BarangListScreen() {
             icon="package-variant-closed"
             title="Belum Ada Barang"
             message={
-              searchQuery || selectedCategory
+              searchQuery || selectedCategory || selectedKatalog
                 ? 'Tidak ada barang yang sesuai dengan pencarian'
                 : 'Mulai tambahkan barang pertama Anda'
             }
-            actionText={!searchQuery && !selectedCategory ? 'Tambah Barang' : undefined}
-            onAction={!searchQuery && !selectedCategory ? handleAddBarang : undefined}
+            actionText={!searchQuery && !selectedCategory && !selectedKatalog ? 'Tambah Barang' : undefined}
+            onAction={!searchQuery && !selectedCategory && !selectedKatalog ? handleAddBarang : undefined}
           />
         }
         refreshControl={
@@ -326,6 +362,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     elevation: 0,
     backgroundColor: '#F5F5F5',
+  },
+  katalogRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  katalogChip: {
+    height: 32,
   },
   filterRow: {
     flexDirection: 'row',

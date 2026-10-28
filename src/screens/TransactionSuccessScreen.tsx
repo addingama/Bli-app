@@ -188,7 +188,7 @@ export default function TransactionSuccessScreen() {
         <Button
           mode="outlined"
           icon="file-document-outline"
-          onPress={() => {}}
+          onPress={() => navigation.navigate('TransactionDetail', { transaksiId })}
           style={styles.actionButton}
           contentStyle={styles.actionButtonContent}
         >

@@ -23,6 +23,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList, TransaksiItemInput } from '../types';
 import { formatCurrency } from '../utils/formatCurrency';
+import { formatQuantity } from '../utils/formatQuantity';
 import { spacing } from '../theme/theme';
 import AddItemModal from '../components/AddItemModal';
 import { createTransaksiJual } from '../database/queries/transaksi';
@@ -135,7 +136,7 @@ export default function SellTransactionScreen() {
                       {item.grade && ` ${item.grade}`}
                     </Text>
                     <Text style={styles.itemDetail}>
-                      {item.quantity} {item.satuan} × {formatCurrency(item.harga_satuan)}
+                      {formatQuantity(item.quantity)} {item.satuan} × {formatCurrency(item.harga_satuan)}
                     </Text>
                     <Text style={[styles.itemSubtotal, { color: theme.colors.secondary }]}>
                       = {formatCurrency(item.sub_total)}

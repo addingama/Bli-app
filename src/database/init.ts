@@ -4,7 +4,7 @@
  */
 
 import * as SQLite from 'expo-sqlite';
-import { DATABASE_SCHEMA } from './schema';
+import { DATABASE_SCHEMA, RINGKASAN_STOK_VIEW_SQL } from './schema';
 
 const DATABASE_NAME = 'bliapp.db';
 
@@ -43,6 +43,8 @@ export async function initDatabase(): Promise<void> {
       }
     }
     
+    await migrateDatabase(db);
+
     console.log('[DB] Database initialized successfully');
     
     // Seed initial data if database is empty
@@ -63,6 +65,23 @@ async function readSchemaFile(): Promise<string> {
 }
 
 /**
+ * Add columns and replace views that CREATE IF NOT EXISTS will not update.
+ */
+async function migrateDatabase(db: SQLite.SQLiteDatabase): Promise<void> {
+  const columns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(barang)');
+  const hasKatalog = columns.some(column => column.name === 'katalog');
+
+  if (!hasKatalog) {
+    await db.execAsync(
+      `ALTER TABLE barang ADD COLUMN katalog TEXT NOT NULL DEFAULT 'jual'`
+    );
+  }
+
+  await db.execAsync('DROP VIEW IF EXISTS v_ringkasan_stok');
+  await db.execAsync(RINGKASAN_STOK_VIEW_SQL);
+}
+
+/**
  * Seed initial data for development/testing
  */
 async function seedInitialData(db: SQLite.SQLiteDatabase): Promise<void> {
@@ -75,12 +94,13 @@ async function seedInitialData(db: SQLite.SQLiteDatabase): Promise<void> {
       
       // Insert sample barang
       await db.runAsync(`
-        INSERT INTO barang (nama, kategori, satuan_default, grades, status) VALUES
-        ('Plastik PET', 'Plastik', 'kg', '["A","B","C"]', 'aktif'),
-        ('Kardus Bekas', 'Kertas', 'kg', '["A","B"]', 'aktif'),
-        ('Botol Kaca', 'Kaca', 'kg', NULL, 'aktif'),
-        ('Kertas HVS', 'Kertas', 'kg', '["A","B"]', 'aktif'),
-        ('Besi Tua', 'Logam', 'kg', NULL, 'aktif')
+        INSERT INTO barang (nama, kategori, satuan_default, grades, status, katalog) VALUES
+        ('Plastik Campur', 'Plastik', 'kg', NULL, 'aktif', 'beli'),
+        ('Kardus Campur', 'Kertas', 'kg', NULL, 'aktif', 'beli'),
+        ('Plastik PET', 'Plastik', 'kg', '["A","B","C"]', 'aktif', 'jual'),
+        ('Kardus Bersih', 'Kertas', 'kg', '["A","B"]', 'aktif', 'jual'),
+        ('Botol Kaca', 'Kaca', 'kg', NULL, 'aktif', 'jual'),
+        ('Besi Tua', 'Logam', 'kg', NULL, 'aktif', 'jual')
       `);
       
       // Insert sample supplier

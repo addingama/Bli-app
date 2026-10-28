@@ -22,6 +22,7 @@ import {
   Searchbar,
 } from 'react-native-paper';
 import { formatCurrency, parseCurrency, formatCurrencyInput } from '../utils/formatCurrency';
+import { formatQuantity, parseQuantity, sanitizeQuantityInput } from '../utils/formatQuantity';
 import { spacing } from '../theme/theme';
 import type { TransaksiItemInput, Barang } from '../types';
 
@@ -80,9 +81,9 @@ export function AddItemModalView({
   const theme = useTheme();
 
   const subTotal = React.useMemo(() => {
-    const qty = parseFloat(quantity);
+    const qty = parseQuantity(quantity);
     const harga = parseCurrency(hargaSatuan);
-    if (isNaN(qty) || isNaN(harga)) return 0;
+    if (!Number.isFinite(qty) || isNaN(harga)) return 0;
     return qty * harga;
   }, [quantity, hargaSatuan]);
 
@@ -173,7 +174,7 @@ export function AddItemModalView({
                   mode="outlined"
                   label="Quantity *"
                   value={quantity}
-                  onChangeText={onQuantityChange}
+                  onChangeText={value => onQuantityChange(sanitizeQuantityInput(value))}
                   style={[styles.input, styles.flex1]}
                   keyboardType="decimal-pad"
                   placeholder="0"
@@ -197,7 +198,7 @@ export function AddItemModalView({
                     styles.stockInfoText,
                     { color: stokInfo.available ? theme.colors.primary : theme.colors.error }
                   ]}>
-                    {stokInfo.available ? '✓' : '⚠️'} Stok: {stokInfo.current} {satuan}
+                    {stokInfo.available ? '✓' : '⚠️'} Stok: {formatQuantity(stokInfo.current)} {satuan}
                     {!stokInfo.available && ' (Tidak cukup!)'}
                   </Text>
                 </View>
@@ -281,7 +282,7 @@ export default function AddItemModal({ visible, onDismiss, onAdd, jenis }: AddIt
     } else {
       loadBarang();
     }
-  }, [searchQuery]);
+  }, [searchQuery, jenis]);
 
   React.useEffect(() => {
     if (jenis === 'jual' && selectedBarang) {
@@ -292,7 +293,7 @@ export default function AddItemModal({ visible, onDismiss, onAdd, jenis }: AddIt
   const loadBarang = async () => {
     try {
       const { getAllBarang } = await import('../database/queries/barang');
-      const data = await getAllBarang();
+      const data = await getAllBarang(jenis);
       setBarangList(data);
     } catch (error) {
       console.error('[AddItemModal] Error loading barang:', error);
@@ -302,7 +303,7 @@ export default function AddItemModal({ visible, onDismiss, onAdd, jenis }: AddIt
   const searchBarang = async (keyword: string) => {
     try {
       const { searchBarang: search } = await import('../database/queries/barang');
-      const data = await search(keyword);
+      const data = await search(keyword, jenis);
       setBarangList(data);
     } catch (error) {
       console.error('[AddItemModal] Error searching barang:', error);
@@ -314,8 +315,8 @@ export default function AddItemModal({ visible, onDismiss, onAdd, jenis }: AddIt
 
     try {
       const { checkStokAvailable } = await import('../database/queries/stok');
-      const qty = parseFloat(quantity);
-      if (isNaN(qty)) return;
+      const qty = parseQuantity(quantity);
+      if (!Number.isFinite(qty)) return;
 
       const result = await checkStokAvailable(
         selectedBarang.id,
@@ -344,10 +345,10 @@ export default function AddItemModal({ visible, onDismiss, onAdd, jenis }: AddIt
   const handleAdd = () => {
     if (!selectedBarang) return;
 
-    const qty = parseFloat(quantity);
+    const qty = parseQuantity(quantity);
     const harga = parseCurrency(hargaSatuan);
 
-    if (isNaN(qty) || qty <= 0) {
+    if (!Number.isFinite(qty) || qty <= 0) {
       alert('Quantity harus lebih dari 0');
       return;
     }
@@ -358,7 +359,7 @@ export default function AddItemModal({ visible, onDismiss, onAdd, jenis }: AddIt
     }
 
     if (jenis === 'jual' && stokInfo && !stokInfo.available) {
-      alert(`Stok tidak mencukupi! Tersedia: ${stokInfo.current} ${satuan}`);
+      alert(`Stok tidak mencukupi! Tersedia: ${formatQuantity(stokInfo.current)} ${satuan}`);
       return;
     }
 
